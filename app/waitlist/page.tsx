@@ -11,9 +11,17 @@ export default function WaitlistPage() {
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (email.trim()) setSubmitted(true);
+    if (!email.trim()) return;
+    try {
+      await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'waitlist-page' }),
+      });
+    } catch {}
+    setSubmitted(true);
   }
 
   function copyLink() {
