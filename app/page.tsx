@@ -7,7 +7,7 @@ function HubbsLogo({ size = 36 }: { size?: number }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 44 44"
+      viewBox="0 0 44 52"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Hubbs"
@@ -142,6 +142,17 @@ const features = [
     title: 'Shopping Lists',
     desc: 'Real-time shared grocery and to-do lists so no one in the family ever misses a thing.',
   },
+  {
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C12 2 8 6 8 10C8 12 9 13 10 14L12 22L14 14C15 13 16 12 16 10C16 6 12 2 12 2Z" stroke="#FE7F32" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+        <path d="M8 10C6 9 4 10 3 12C2 14 3 16 5 17L12 22" stroke="#FE7F32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16 10C18 9 20 10 21 12C22 14 21 16 19 17L12 22" stroke="#FE7F32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    title: "Daily Du'aa",
+    desc: "Start your day with authentic Islamic supplications. 30 carefully selected du'aa for morning, evening, and daily moments of reflection.",
+  },
 ];
 
 const tiers = [
@@ -225,8 +236,8 @@ export default function HomePage() {
           scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#" className="flex items-center gap-2.5 overflow-visible">
+        <div className="max-w-6xl mx-auto px-6 min-h-[70px] overflow-visible flex items-center justify-between">
+          <a href="#" className="flex items-center gap-2.5 overflow-visible pb-2">
             <HubbsLogo size={36} />
             <span className="font-display text-2xl text-hubbs-orange tracking-wide">hubbs</span>
           </a>
@@ -336,10 +347,14 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f) => (
+            {features.map((f, i) => (
               <div
                 key={f.title}
-                className="bg-hubbs-light rounded-3xl p-7 group hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+                className={`bg-hubbs-light rounded-3xl p-7 group hover:shadow-lg transition-all duration-200 hover:-translate-y-1 ${
+                  i === features.length - 1 && features.length % 3 === 1
+                    ? 'lg:col-start-2'
+                    : ''
+                }`}
               >
                 <div className="mb-4">{f.icon}</div>
                 <h3 className="font-display text-xl text-hubbs-blue mb-2 group-hover:text-hubbs-orange transition-colors">
@@ -502,7 +517,7 @@ export default function HomePage() {
       <footer className="bg-hubbs-dark text-white/50 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <a href="#" className="flex items-center gap-2.5 overflow-visible">
+            <a href="#" className="flex items-center gap-2.5 overflow-visible pb-2">
               <HubbsLogo size={30} />
               <span className="font-display text-xl text-white">hubbs</span>
             </a>
