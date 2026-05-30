@@ -545,6 +545,8 @@ export default function HomePage() {
               <a href="#features" className="hover:text-hubbs-orange transition-colors">Features</a>
               <a href="#pricing" className="hover:text-hubbs-orange transition-colors">Pricing</a>
               <a href="#download" className="hover:text-hubbs-orange transition-colors">Download</a>
+              <a href="/privacy" className="hover:text-hubbs-orange transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-hubbs-orange transition-colors">Terms of Service</a>
               <a href="mailto:support@hubbsapp.com" className="hover:text-hubbs-orange transition-colors">Contact</a>
             </nav>
           </div>
