@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { Resend } from 'resend';
 
-// Note: @vercel/kv is deprecated; Vercel now routes KV stores through Upstash Redis
-// (visible under Vercel Integrations). The package API remains the same.
-// Required env vars: KV_URL, KV_REST_API_URL, KV_REST_API_TOKEN, RESEND_API_KEY
+// Required env vars: KV_REST_API_URL, KV_REST_API_TOKEN, RESEND_API_KEY
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   const normalized = email.toLowerCase().trim();
 
-  const existing = await kv.get(`waitlist:${normalized}`);
+  const existing = await redis.get(`waitlist:${normalized}`);
   if (existing) {
     return NextResponse.json({ success: true, message: "You're already on the list!" });
   }
@@ -40,8 +43,8 @@ export async function POST(request: NextRequest) {
     device: /mobile|android|iphone|ipad/i.test(userAgent) ? 'mobile' : 'desktop',
   };
 
-  await kv.set(`waitlist:${normalized}`, entry);
-  await kv.sadd('waitlist:emails', normalized);
+  await redis.set(`waitlist:${normalized}`, entry);
+  await redis.sadd('waitlist:emails', normalized);
 
   try {
     await resend.emails.send({
