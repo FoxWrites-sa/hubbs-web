@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const existing = await redis.get(`waitlist:${normalized}`);
   if (existing) {
-    return NextResponse.json({ success: true, message: "You're already on the list!" });
+    return NextResponse.json({ success: false, message: 'already_exists' });
   }
 
   const userAgent = request.headers.get('user-agent') ?? '';

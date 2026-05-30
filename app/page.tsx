@@ -232,9 +232,11 @@ export default function HomePage() {
   const [heroEmail, setHeroEmail] = useState('');
   const [heroSubmitted, setHeroSubmitted] = useState(false);
   const [heroCopied, setHeroCopied] = useState(false);
+  const [heroAlreadyExists, setHeroAlreadyExists] = useState(false);
   const [ctaEmail, setCtaEmail] = useState('');
   const [ctaSubmitted, setCtaSubmitted] = useState(false);
   const [ctaCopied, setCtaCopied] = useState(false);
+  const [ctaAlreadyExists, setCtaAlreadyExists] = useState(false);
   const [annual, setAnnual] = useState(false);
 
   useEffect(() => {
@@ -243,32 +245,39 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  async function submitWaitlist(email: string, source: string): Promise<boolean> {
+  async function submitWaitlist(email: string, source: string): Promise<{ success: boolean; message?: string }> {
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, source }),
       });
-      const data = await res.json();
-      return data.success === true;
+      return await res.json();
     } catch {
-      return false;
+      return { success: false };
     }
   }
 
   async function handleHeroWaitlist(e: React.FormEvent) {
     e.preventDefault();
     if (!heroEmail.trim()) return;
-    await submitWaitlist(heroEmail, 'hero');
-    setHeroSubmitted(true);
+    const data = await submitWaitlist(heroEmail, 'hero');
+    if (!data.success && data.message === 'already_exists') {
+      setHeroAlreadyExists(true);
+      return;
+    }
+    if (data.success) setHeroSubmitted(true);
   }
 
   async function handleCtaWaitlist(e: React.FormEvent) {
     e.preventDefault();
     if (!ctaEmail.trim()) return;
-    await submitWaitlist(ctaEmail, 'cta');
-    setCtaSubmitted(true);
+    const data = await submitWaitlist(ctaEmail, 'cta');
+    if (!data.success && data.message === 'already_exists') {
+      setCtaAlreadyExists(true);
+      return;
+    }
+    if (data.success) setCtaSubmitted(true);
   }
 
   function copyWaitlistLink(setCopied: (v: boolean) => void) {
@@ -372,7 +381,7 @@ export default function HomePage() {
                   <input
                     type="email"
                     value={heroEmail}
-                    onChange={(e) => setHeroEmail(e.target.value)}
+                    onChange={(e) => { setHeroEmail(e.target.value); setHeroAlreadyExists(false); }}
                     placeholder="Enter your email"
                     required
                     className="flex-1 px-5 py-3.5 rounded-2xl border border-gray-200 text-hubbs-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hubbs-orange bg-white"
@@ -384,6 +393,11 @@ export default function HomePage() {
                     Join the Waitlist
                   </button>
                 </form>
+                {heroAlreadyExists && (
+                  <p style={{ color: '#FE7F32', fontSize: '13px', marginTop: '8px' }} className="text-center lg:text-left">
+                    You&apos;re already on the list 🧡
+                  </p>
+                )}
                 <p className="text-xs text-hubbs-subtle mt-3 text-center lg:text-left">
                   Be among the first 1,000 families. No spam. Unsubscribe anytime.
                 </p>
@@ -681,22 +695,29 @@ export default function HomePage() {
           {ctaSubmitted ? (
             <ThankYouCard onCopy={() => copyWaitlistLink(setCtaCopied)} copied={ctaCopied} />
           ) : (
-            <form onSubmit={handleCtaWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                value={ctaEmail}
-                onChange={(e) => setCtaEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-                className="flex-1 px-5 py-3.5 rounded-2xl text-hubbs-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hubbs-orange"
-              />
-              <button
-                type="submit"
-                className="bg-hubbs-orange text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-hubbs-orange-dark transition-colors whitespace-nowrap"
-              >
-                Join the Waitlist
-              </button>
-            </form>
+            <>
+              <form onSubmit={handleCtaWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input
+                  type="email"
+                  value={ctaEmail}
+                  onChange={(e) => { setCtaEmail(e.target.value); setCtaAlreadyExists(false); }}
+                  placeholder="Enter your email"
+                  required
+                  className="flex-1 px-5 py-3.5 rounded-2xl text-hubbs-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hubbs-orange"
+                />
+                <button
+                  type="submit"
+                  className="bg-hubbs-orange text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-hubbs-orange-dark transition-colors whitespace-nowrap"
+                >
+                  Join the Waitlist
+                </button>
+              </form>
+              {ctaAlreadyExists && (
+                <p style={{ color: '#FE7F32', fontSize: '13px', marginTop: '8px' }}>
+                  You&apos;re already on the list 🧡
+                </p>
+              )}
+            </>
           )}
         </div>
       </section>

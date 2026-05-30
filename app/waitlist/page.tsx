@@ -10,18 +10,26 @@ export default function WaitlistPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [alreadyExists, setAlreadyExists] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     try {
-      await fetch('/api/waitlist', {
+      const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, source: 'waitlist-page' }),
       });
-    } catch {}
-    setSubmitted(true);
+      const data = await res.json();
+      if (!data.success && data.message === 'already_exists') {
+        setAlreadyExists(true);
+        return;
+      }
+      if (data.success) setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    }
   }
 
   function copyLink() {
@@ -138,7 +146,7 @@ export default function WaitlistPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setAlreadyExists(false); }}
                 placeholder="Enter your email"
                 required
                 style={{
@@ -151,6 +159,11 @@ export default function WaitlistPage() {
                   background: '#FFFBF7',
                 }}
               />
+              {alreadyExists && (
+                <p style={{ color: '#FE7F32', fontSize: '13px', marginTop: '8px', textAlign: 'center' }}>
+                  You&apos;re already on the list 🧡
+                </p>
+              )}
               <button
                 type="submit"
                 style={{
