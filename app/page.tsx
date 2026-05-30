@@ -4,15 +4,23 @@ import { useState, useEffect } from 'react';
 
 function HubbsLogo({ size = 36 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hubbs">
-      {/* Left figure */}
-      <circle cx="11" cy="9" r="5" fill="#FE7F32" />
-      <path d="M6 18c0-2.76 2.24-5 5-5s5 2.24 5 5v8H6v-8z" fill="#FE7F32" />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 44 44"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Hubbs"
+      style={{ display: 'block', overflow: 'visible' }}
+    >
+      {/* Left figure — head at cy=14 gives y=9 top, 9-unit buffer from viewBox edge */}
+      <circle cx="11" cy="14" r="5" fill="#FE7F32" />
+      <path d="M6 24c0-2.76 2.24-5 5-5s5 2.24 5 5v12H6V24z" fill="#FE7F32" />
       {/* Right figure */}
-      <circle cx="33" cy="9" r="5" fill="#FE7F32" />
-      <path d="M28 18c0-2.76 2.24-5 5-5s5 2.24 5 5v8H28v-8z" fill="#FE7F32" />
+      <circle cx="33" cy="14" r="5" fill="#FE7F32" />
+      <path d="M28 24c0-2.76 2.24-5 5-5s5 2.24 5 5v12H28V24z" fill="#FE7F32" />
       {/* H crossbar */}
-      <rect x="16" y="20" width="12" height="5" rx="2.5" fill="#FE7F32" />
+      <rect x="17" y="26" width="10" height="5" rx="2.5" fill="#FE7F32" />
     </svg>
   );
 }
@@ -211,7 +219,7 @@ export default function HomePage() {
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="#" className="flex items-center gap-2.5">
+          <a href="#" className="flex items-center gap-2.5 overflow-visible">
             <HubbsLogo size={36} />
             <span className="font-display text-2xl text-hubbs-orange tracking-wide">hubbs</span>
           </a>
@@ -454,7 +462,7 @@ export default function HomePage() {
       <footer className="bg-hubbs-dark text-white/50 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <a href="#" className="flex items-center gap-2.5">
+            <a href="#" className="flex items-center gap-2.5 overflow-visible">
               <HubbsLogo size={30} />
               <span className="font-display text-xl text-white">hubbs</span>
             </a>
