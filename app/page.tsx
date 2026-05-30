@@ -2,29 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-function HubbsLogo({ size = 36 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 44 52"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Hubbs"
-      style={{ display: 'block', overflow: 'visible' }}
-    >
-      {/* Left figure — head at cy=14 gives y=9 top, 9-unit buffer from viewBox edge */}
-      <circle cx="11" cy="14" r="5" fill="#FE7F32" />
-      <path d="M6 24c0-2.76 2.24-5 5-5s5 2.24 5 5v12H6V24z" fill="#FE7F32" />
-      {/* Right figure */}
-      <circle cx="33" cy="14" r="5" fill="#FE7F32" />
-      <path d="M28 24c0-2.76 2.24-5 5-5s5 2.24 5 5v12H28V24z" fill="#FE7F32" />
-      {/* H crossbar */}
-      <rect x="17" y="26" width="10" height="5" rx="2.5" fill="#FE7F32" />
-    </svg>
-  );
-}
-
 function PhoneMockup() {
   return (
     <svg
@@ -111,6 +88,7 @@ const features = [
     ),
     title: 'Family Calendar',
     desc: 'Shared events, birthdays, and reminders — everyone stays on the same page, always.',
+    comingSoon: true,
   },
   {
     icon: (
@@ -120,6 +98,7 @@ const features = [
     ),
     title: 'Family Chat',
     desc: 'A private, ad-free space for your family to connect, share memories, and celebrate together.',
+    comingSoon: true,
   },
   {
     icon: (
@@ -131,6 +110,7 @@ const features = [
     ),
     title: 'Learning Hub',
     desc: 'Curated articles and guided sessions on health, mindfulness, productivity, and faith.',
+    comingSoon: true,
   },
   {
     icon: (
@@ -141,6 +121,7 @@ const features = [
     ),
     title: 'Shopping Lists',
     desc: 'Real-time shared grocery and to-do lists so no one in the family ever misses a thing.',
+    comingSoon: true,
   },
   {
     icon: (
@@ -151,7 +132,7 @@ const features = [
       </svg>
     ),
     title: "Daily Du'aa",
-    desc: "Start your day with authentic Islamic supplications. 30 carefully selected du'aa for morning, evening, and daily moments of reflection.",
+    desc: "Start your day with authentic Islamic supplications. Curated duʼaa for morning, evening, and daily moments of reflection — refreshed daily.",
   },
 ];
 
@@ -236,10 +217,23 @@ export default function HomePage() {
           scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-6 min-h-[70px] overflow-visible flex items-center justify-between">
-          <a href="#" className="flex items-center gap-2.5 overflow-visible pb-2">
-            <HubbsLogo size={36} />
-            <span className="font-display text-2xl text-hubbs-orange tracking-wide">hubbs</span>
+        <div
+          className="max-w-6xl mx-auto px-6 flex justify-between"
+          style={{ minHeight: '70px', overflow: 'visible', alignItems: 'center', paddingTop: '4px', paddingBottom: '4px' }}
+        >
+          <a href="#" style={{ textDecoration: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'visible', padding: '8px 0' }}>
+              <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible', flexShrink: 0 }}>
+                <circle cx="9" cy="6" r="6" fill="#FE7F32"/>
+                <rect x="4" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
+                <circle cx="27" cy="6" r="6" fill="#FE7F32"/>
+                <rect x="22" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
+                <rect x="14" y="20" width="8" height="8" rx="2" fill="#FE7F32"/>
+              </svg>
+              <span style={{ fontWeight: '700', fontSize: '20px', color: '#294C72', letterSpacing: '-0.5px' }}>
+                hubbs
+              </span>
+            </div>
           </a>
 
           {/* Desktop links */}
@@ -350,12 +344,28 @@ export default function HomePage() {
             {features.map((f, i) => (
               <div
                 key={f.title}
-                className={`bg-hubbs-light rounded-3xl p-7 group hover:shadow-lg transition-all duration-200 hover:-translate-y-1 ${
+                className={`relative bg-hubbs-light rounded-3xl p-7 group hover:shadow-lg transition-all duration-200 hover:-translate-y-1 ${
                   i === features.length - 1 && features.length % 3 === 1
                     ? 'lg:col-start-2'
                     : ''
                 }`}
               >
+                {(f as any).comingSoon && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    background: '#FFDFCC',
+                    color: '#FE7F32',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    lineHeight: '1.4',
+                  }}>
+                    Coming Soon
+                  </span>
+                )}
                 <div className="mb-4">{f.icon}</div>
                 <h3 className="font-display text-xl text-hubbs-blue mb-2 group-hover:text-hubbs-orange transition-colors">
                   {f.title}
@@ -517,9 +527,19 @@ export default function HomePage() {
       <footer className="bg-hubbs-dark text-white/50 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <a href="#" className="flex items-center gap-2.5 overflow-visible pb-2">
-              <HubbsLogo size={30} />
-              <span className="font-display text-xl text-white">hubbs</span>
+            <a href="#" style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'visible', padding: '8px 0' }}>
+                <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible', flexShrink: 0 }}>
+                  <circle cx="9" cy="6" r="6" fill="#FE7F32"/>
+                  <rect x="4" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
+                  <circle cx="27" cy="6" r="6" fill="#FE7F32"/>
+                  <rect x="22" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
+                  <rect x="14" y="20" width="8" height="8" rx="2" fill="#FE7F32"/>
+                </svg>
+                <span style={{ fontWeight: '700', fontSize: '20px', color: '#ffffff', letterSpacing: '-0.5px' }}>
+                  hubbs
+                </span>
+              </div>
             </a>
             <nav className="flex flex-wrap gap-6 text-sm justify-center">
               <a href="#features" className="hover:text-hubbs-orange transition-colors">Features</a>
