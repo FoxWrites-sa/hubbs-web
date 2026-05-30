@@ -61,14 +61,13 @@ export async function POST(request: NextRequest) {
               <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:24px;padding:40px 32px;box-shadow:0 4px 40px rgba(41,76,114,0.1);">
                 <tr><td align="center" style="padding-bottom:24px;">
                   <div style="text-align: center; margin-bottom: 32px;">
-                    <svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="8" r="6" fill="#FE7F32"/>
-                      <rect x="14" y="16" width="12" height="18" rx="6" fill="#FE7F32"/>
-                      <circle cx="44" cy="8" r="6" fill="#FE7F32"/>
-                      <rect x="38" y="16" width="12" height="18" rx="6" fill="#FE7F32"/>
-                      <rect x="26" y="20" width="12" height="8" rx="3" fill="#FE7F32"/>
-                    </svg>
-                    <span style="font-size: 24px; font-weight: bold; color: #294C72; margin-left: 8px; vertical-align: middle;">hubbs</span>
+                    <img
+                      src="https://hubbsapp.com/images/logo.png"
+                      alt="Hubbs"
+                      width="120"
+                      height="auto"
+                      style="display: inline-block;"
+                    />
                   </div>
                 </td></tr>
                 <tr><td style="font-size:40px;text-align:center;padding-bottom:16px;">🧡</td></tr>
