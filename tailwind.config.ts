@@ -10,18 +10,20 @@ const config: Config = {
     extend: {
       colors: {
         hubbs: {
-          primary: "#F97316",
-          dark: "#0F172A",
-          card: "#1E293B",
-          text: "#F8FAFC",
-          subtle: "#94A3B8",
+          orange: "#FE7F32",
+          "orange-dark": "#E06A20",
+          blue: "#294C72",
+          dark: "#1A2F45",
+          light: "#F8F4EF",
+          subtle: "#6B7280",
           success: "#22C55E",
           danger: "#EF4444",
-          purple: "#8B5CF6",
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Astonpoliz", "Georgia", "serif"],
+        body: ["Avec", "Inter", "system-ui", "sans-serif"],
+        sans: ["Avec", "Inter", "system-ui", "sans-serif"],
       },
     },
   },

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hubbs – Family & Life Planner",
-  description: "Build better habits together with Hubbs",
+  title: "Hubbs — Smart Hubs, Connected Living",
+  description: "Build better habits, strengthen family bonds, and grow together — all in one app designed for modern families.",
   openGraph: {
-    title: "Hubbs – Family & Life Planner",
-    description: "Build better habits together with Hubbs",
+    title: "Hubbs — Smart Hubs, Connected Living",
+    description: "Build better habits, strengthen family bonds, and grow together with Hubbs.",
     siteName: "Hubbs",
   },
 };

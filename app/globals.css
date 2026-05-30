@@ -2,11 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@font-face {
+  font-family: 'Astonpoliz';
+  src: url('/fonts/Astonpoliz.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
-:root {
-  --hubbs-primary: #F97316;
-  --hubbs-dark: #0F172A;
+@font-face {
+  font-family: 'Avec';
+  src: url('/fonts/Avec.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 64px;
 }
 
 * {
@@ -14,12 +28,8 @@
 }
 
 body {
-  background-color: #0F172A;
-  color: #F8FAFC;
-  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F8F4EF;
+  color: #1A2F45;
+  font-family: 'Avec', 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-[dir="rtl"] {
-  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
 }
