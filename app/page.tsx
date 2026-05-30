@@ -12,41 +12,31 @@ function PhoneMockup() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* Phone shell */}
       <rect width="260" height="500" rx="44" fill="#1A2F45" />
-      {/* Screen */}
       <rect x="10" y="10" width="240" height="480" rx="36" fill="#0F1923" />
-      {/* Notch */}
       <rect x="88" y="16" width="84" height="6" rx="3" fill="#294C72" opacity="0.6" />
-      {/* App bar */}
       <rect x="22" y="36" width="90" height="16" rx="6" fill="#294C72" opacity="0.8" />
       <circle cx="224" cy="44" r="12" fill="#FE7F32" opacity="0.2" />
       <circle cx="224" cy="44" r="6" fill="#FE7F32" opacity="0.7" />
-      {/* Section label */}
       <rect x="22" y="66" width="60" height="8" rx="3" fill="#294C72" opacity="0.5" />
-      {/* Habit card 1 */}
       <rect x="22" y="84" width="216" height="58" rx="14" fill="#294C72" opacity="0.35" />
       <circle cx="52" cy="113" r="16" fill="#FE7F32" opacity="0.85" />
       <rect x="78" y="102" width="90" height="9" rx="4" fill="white" opacity="0.55" />
       <rect x="78" y="117" width="55" height="7" rx="3" fill="white" opacity="0.3" />
       <rect x="210" y="107" width="18" height="12" rx="4" fill="#FE7F32" opacity="0.6" />
-      {/* Habit card 2 */}
       <rect x="22" y="152" width="216" height="58" rx="14" fill="#294C72" opacity="0.35" />
       <circle cx="52" cy="181" r="16" fill="#22C55E" opacity="0.85" />
       <rect x="78" y="170" width="110" height="9" rx="4" fill="white" opacity="0.55" />
       <rect x="78" y="185" width="65" height="7" rx="3" fill="white" opacity="0.3" />
       <rect x="206" y="175" width="22" height="12" rx="4" fill="#22C55E" opacity="0.5" />
-      {/* Habit card 3 */}
       <rect x="22" y="220" width="216" height="58" rx="14" fill="#294C72" opacity="0.35" />
       <circle cx="52" cy="249" r="16" fill="#8B5CF6" opacity="0.85" />
       <rect x="78" y="238" width="75" height="9" rx="4" fill="white" opacity="0.55" />
       <rect x="78" y="253" width="95" height="7" rx="3" fill="white" opacity="0.3" />
       <rect x="208" y="243" width="20" height="12" rx="4" fill="#8B5CF6" opacity="0.5" />
-      {/* Progress bar area */}
       <rect x="22" y="294" width="216" height="40" rx="14" fill="#294C72" opacity="0.2" />
       <rect x="32" y="304" width="100" height="6" rx="3" fill="#FE7F32" opacity="0.7" />
       <rect x="32" y="314" width="160" height="6" rx="3" fill="white" opacity="0.15" />
-      {/* Bottom nav bar */}
       <rect x="10" y="450" width="240" height="40" rx="0" fill="#0F1923" />
       <rect x="10" y="448" width="240" height="2" fill="#294C72" opacity="0.4" />
       <circle cx="55" cy="470" r="10" fill="#FE7F32" opacity="0.9" />
@@ -77,51 +67,7 @@ const features = [
       </svg>
     ),
     title: 'Prayer Tracker',
-    desc: 'Track all 5 daily prayers — Fajr, Dhuhr, Asr, Maghrib, and Isha. Build streaks and stay spiritually consistent every day.',
-  },
-  {
-    icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="5" width="22" height="20" rx="3" stroke="#FE7F32" strokeWidth="2" />
-        <path d="M3 11h22M9 3v4M19 3v4" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Family Calendar',
-    desc: 'Shared events, birthdays, and reminders — everyone stays on the same page, always.',
-    comingSoon: true,
-  },
-  {
-    icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 5h20a2 2 0 012 2v12a2 2 0 01-2 2H8l-6 4V7a2 2 0 012-2z" stroke="#FE7F32" strokeWidth="2" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: 'Family Chat',
-    desc: 'A private, ad-free space for your family to connect, share memories, and celebrate together.',
-    comingSoon: true,
-  },
-  {
-    icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 6h20M4 12h14M4 18h17" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="22" cy="20" r="5" fill="none" stroke="#FE7F32" strokeWidth="2" />
-        <path d="M20 20l1.5 1.5L24 18" stroke="#FE7F32" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: 'Learning Hub',
-    desc: 'Curated articles and guided sessions on health, mindfulness, productivity, and faith.',
-    comingSoon: true,
-  },
-  {
-    icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 8h18l-2 14H7L5 8z" stroke="#FE7F32" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M10 8V6a4 4 0 018 0v2" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Shopping Lists',
-    desc: 'Real-time shared grocery and to-do lists so no one in the family ever misses a thing.',
-    comingSoon: true,
+    desc: 'Track all 5 daily prayers with real-time schedules, streak tracking, and azan notifications.',
   },
   {
     icon: (
@@ -132,7 +78,50 @@ const features = [
       </svg>
     ),
     title: "Daily Du'aa",
-    desc: "Start your day with authentic Islamic supplications. Curated duʼaa for morning, evening, and daily moments of reflection — refreshed daily.",
+    desc: "Start your day with authentic Islamic supplications. Curated du'aa for morning, evening, and daily moments of reflection — refreshed daily.",
+  },
+  {
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="11" stroke="#FE7F32" strokeWidth="2" />
+        <path d="M9 13c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.5-.66 2.85-1.71 3.78L16 19H12l-1.29-2.22A4.98 4.98 0 019 13z" stroke="#FE7F32" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M12 19v2M16 19v2" stroke="#FE7F32" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+    title: 'Mood Check-ins',
+    desc: 'Daily morning and evening check-ins to track how you and your family are really feeling over time.',
+  },
+  {
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="11" r="5" stroke="#FE7F32" strokeWidth="2" />
+        <path d="M5 25c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
+        <path d="M20 8l2-2M23 11h2M20.5 14.5l1.5 1.5" stroke="#FE7F32" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+    title: 'AI Buddy',
+    desc: 'A personal AI that knows your habits, your mood, and your goals — and checks in before you even ask.',
+  },
+  {
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="22" height="16" rx="3" stroke="#FE7F32" strokeWidth="2" />
+        <path d="M9 10h10M9 14h6" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
+        <path d="M10 24l4-4 4 4" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    title: 'AI English Teacher',
+    desc: 'Learn English naturally through daily conversations, corrections, and personalised lessons powered by AI.',
+  },
+  {
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 8h18l-2 14H7L5 8z" stroke="#FE7F32" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M10 8V6a4 4 0 018 0v2" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+    title: 'Shopping Lists',
+    desc: 'Real-time shared grocery and to-do lists so no one in the family ever misses a thing.',
   },
 ];
 
@@ -148,8 +137,8 @@ const tiers = [
       '1 family member',
       '3 active habits',
       'Prayer tracker',
-      'Basic articles',
-      'Family calendar (view)',
+      'Basic mood check-ins',
+      'Daily Du\'aa',
     ],
     cta: 'Get Started',
     highlight: false,
@@ -159,14 +148,17 @@ const tiers = [
     monthlyPrice: '$7.99',
     annualPrice: '$5.99',
     period: 'per month',
-    annualNote: 'billed as $71.88/year',
+    annualNote: 'billed annually',
     badge: 'MOST POPULAR',
     features: [
-      'Up to 5 family members',
+      '1 member',
       'Unlimited habits',
-      'Full learning hub access',
-      'Family chat & lists',
-      'Priority support',
+      'Unlimited AI chat',
+      'AI English Teacher',
+      'Custom habits',
+      'Daily Du\'aa',
+      'Full AI access',
+      '60-day AI history',
     ],
     cta: 'Start Free Trial',
     highlight: true,
@@ -176,25 +168,75 @@ const tiers = [
     monthlyPrice: '$12.99',
     annualPrice: '$9.99',
     period: 'per month',
-    annualNote: 'billed as $119.88/year',
+    annualNote: 'billed annually',
     badge: 'BEST VALUE',
     features: [
-      'Unlimited family members',
+      'Up to 6 family members',
       'Everything in Pro',
-      'Custom family challenges',
-      'Advanced analytics',
-      'Early feature access',
+      'Family Circle',
+      'Shared challenges',
+      'Parent controls',
+      '90-day AI history',
     ],
     cta: 'Get Family Pro',
     highlight: false,
   },
 ];
 
+const WA_SHARE_URL =
+  'https://wa.me/?text=Check%20out%20Hubbs%20%E2%80%94%20a%20family%20wellness%20app%20for%20Muslim%20families!%20hubbsapp.com%2Fwaitlist';
+const WAITLIST_URL = 'https://hubbsapp.com/waitlist';
+
+function ThankYouCard({ onCopy, copied }: { onCopy: () => void; copied: boolean }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '24px', padding: '32px 28px', textAlign: 'center' }}>
+      <div style={{ fontSize: '40px', marginBottom: '12px' }}>🧡</div>
+      <p style={{ color: '#fff', fontSize: '18px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.5' }}>
+        You&apos;re on the list — share Hubbs with one family member and help us grow.
+      </p>
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+        <a
+          href={WA_SHARE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: '#25D366', color: '#fff',
+            padding: '10px 20px', borderRadius: '999px',
+            fontWeight: '600', fontSize: '14px', textDecoration: 'none',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+          </svg>
+          Share on WhatsApp
+        </a>
+        <button
+          onClick={onCopy}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: copied ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+            color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+            padding: '10px 20px', borderRadius: '999px',
+            fontWeight: '600', fontSize: '14px', cursor: 'pointer',
+          }}
+        >
+          {copied ? '✓ Copied!' : '🔗 Copy link'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [heroEmail, setHeroEmail] = useState('');
+  const [heroSubmitted, setHeroSubmitted] = useState(false);
+  const [heroCopied, setHeroCopied] = useState(false);
+  const [ctaEmail, setCtaEmail] = useState('');
+  const [ctaSubmitted, setCtaSubmitted] = useState(false);
+  const [ctaCopied, setCtaCopied] = useState(false);
   const [annual, setAnnual] = useState(false);
 
   useEffect(() => {
@@ -203,9 +245,21 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  function handleWaitlist(e: React.FormEvent) {
+  function handleHeroWaitlist(e: React.FormEvent) {
     e.preventDefault();
-    if (email.trim()) setSubmitted(true);
+    if (heroEmail.trim()) setHeroSubmitted(true);
+  }
+
+  function handleCtaWaitlist(e: React.FormEvent) {
+    e.preventDefault();
+    if (ctaEmail.trim()) setCtaSubmitted(true);
+  }
+
+  function copyWaitlistLink(setCopied: (v: boolean) => void) {
+    navigator.clipboard.writeText(WAITLIST_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
   }
 
   return (
@@ -236,20 +290,18 @@ export default function HomePage() {
             </div>
           </a>
 
-          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-hubbs-dark hover:text-hubbs-orange transition-colors">Features</a>
             <a href="#pricing" className="text-sm font-medium text-hubbs-dark hover:text-hubbs-orange transition-colors">Pricing</a>
-            <a href="#download" className="text-sm font-medium text-hubbs-dark hover:text-hubbs-orange transition-colors">Download</a>
+            <a href="#waitlist" className="text-sm font-medium text-hubbs-dark hover:text-hubbs-orange transition-colors">Early Access</a>
             <a
-              href="#download"
+              href="#waitlist"
               className="bg-hubbs-orange text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-hubbs-orange-dark transition-colors"
             >
-              Get the App
+              Join Waitlist
             </a>
           </div>
 
-          {/* Mobile hamburger */}
           <button
             className="md:hidden p-2 flex flex-col gap-1.5"
             onClick={() => setMenuOpen((o) => !o)}
@@ -261,18 +313,17 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 px-6 py-5 flex flex-col gap-4">
             <a href="#features" className="font-medium text-hubbs-dark hover:text-hubbs-orange" onClick={() => setMenuOpen(false)}>Features</a>
             <a href="#pricing" className="font-medium text-hubbs-dark hover:text-hubbs-orange" onClick={() => setMenuOpen(false)}>Pricing</a>
-            <a href="#download" className="font-medium text-hubbs-dark hover:text-hubbs-orange" onClick={() => setMenuOpen(false)}>Download</a>
+            <a href="#waitlist" className="font-medium text-hubbs-dark hover:text-hubbs-orange" onClick={() => setMenuOpen(false)}>Early Access</a>
             <a
-              href="#download"
+              href="#waitlist"
               className="bg-hubbs-orange text-white font-semibold px-5 py-3 rounded-full text-center"
               onClick={() => setMenuOpen(false)}
             >
-              Get the App
+              Join Waitlist
             </a>
           </div>
         )}
@@ -291,42 +342,86 @@ export default function HomePage() {
               <span className="text-hubbs-orange">Connected</span> Living
             </h1>
             <p className="text-lg text-hubbs-subtle max-w-lg mx-auto lg:mx-0 mb-10 leading-relaxed">
-              Build better habits, strengthen family bonds, and grow together — all in one beautiful app designed for modern families.
+              Build better habits, strengthen family bonds, and grow together — all in one beautiful app designed for Muslim families.
             </p>
 
-            {/* App store buttons */}
-            <div id="download" className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a
-                href="#"
-                className="inline-flex items-center gap-3 bg-hubbs-blue text-white px-6 py-3.5 rounded-2xl hover:bg-hubbs-dark transition-colors"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.73M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-xs opacity-70">Download on the</div>
-                  <div className="text-sm font-semibold leading-tight">App Store</div>
-                </div>
-              </a>
-              <a
-                href="#"
-                className="inline-flex items-center gap-3 bg-hubbs-blue text-white px-6 py-3.5 rounded-2xl hover:bg-hubbs-dark transition-colors"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M3.18 23.76c.3.17.64.22.99.14l12.2-6.9-2.54-2.54-10.65 9.3zM.75 1.54C.44 1.88.26 2.38.26 3v18c0 .62.18 1.12.49 1.46l.08.07 10.08-10.08v-.24L.83 1.47l-.08.07zM20.76 10.46l-2.82-1.6-2.84 2.84 2.84 2.84 2.85-1.62c.81-.46.81-1.21-.03-1.46zM3.18.24L15.38 7.14l-2.54 2.54-9.66-9.44z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-xs opacity-70">Get it on</div>
-                  <div className="text-sm font-semibold leading-tight">Google Play</div>
-                </div>
-              </a>
-            </div>
+            {/* TODO: Add app screenshots when TestFlight build is ready */}
+
+            {/* Waitlist form */}
+            {heroSubmitted ? (
+              <ThankYouCard onCopy={() => copyWaitlistLink(setHeroCopied)} copied={heroCopied} />
+            ) : (
+              <div>
+                <form onSubmit={handleHeroWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto lg:mx-0">
+                  <input
+                    type="email"
+                    value={heroEmail}
+                    onChange={(e) => setHeroEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="flex-1 px-5 py-3.5 rounded-2xl border border-gray-200 text-hubbs-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hubbs-orange bg-white"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-hubbs-orange text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-hubbs-orange-dark transition-colors whitespace-nowrap"
+                  >
+                    Join the Waitlist
+                  </button>
+                </form>
+                <p className="text-xs text-hubbs-subtle mt-3 text-center lg:text-left">
+                  Be among the first 1,000 families. No spam. Unsubscribe anytime.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Phone mockup */}
           <div className="relative flex-shrink-0">
             <div className="absolute inset-0 bg-hubbs-orange/15 rounded-[60px] blur-3xl scale-110 -z-10" />
             <PhoneMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Muslim Family Section ── */}
+      <section style={{ backgroundColor: '#FFFBF7', padding: '80px 24px' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+          <span style={{
+            display: 'inline-block',
+            background: '#FFDFCC', color: '#FE7F32',
+            fontSize: '11px', fontWeight: '700',
+            padding: '5px 16px', borderRadius: '999px',
+            letterSpacing: '0.1em', marginBottom: '20px',
+            textTransform: 'uppercase',
+          }}>
+            Built for Muslim Families
+          </span>
+          <h2 className="font-display" style={{ fontSize: 'clamp(30px, 5vw, 38px)', color: '#294C72', marginBottom: '20px', lineHeight: '1.2' }}>
+            Built for Muslim families
+          </h2>
+          <p style={{ color: '#5F7995', fontSize: '18px', lineHeight: '1.7', marginBottom: '28px' }}>
+            Hubbs is the only family app that combines prayer tracking, daily du&apos;aa, and azan notifications
+            with AI-powered habits, family coordination, and a shared family calendar — all in one beautiful app.
+            Available in English and Arabic.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+            {[
+              '🕌 Prayer Tracker',
+              "🤲 Daily Du'aa",
+              '🔔 Azan Notifications',
+              '👨‍👩‍👧 Family Circle',
+            ].map((pill) => (
+              <span
+                key={pill}
+                style={{
+                  background: '#FFDFCC', color: '#FE7F32',
+                  fontSize: '13px', fontWeight: '600',
+                  padding: '7px 16px', borderRadius: '999px',
+                }}
+              >
+                {pill}
+              </span>
+            ))}
           </div>
         </div>
       </section>
@@ -350,27 +445,93 @@ export default function HomePage() {
                     : ''
                 }`}
               >
-                {(f as any).comingSoon && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '16px',
-                    right: '16px',
-                    background: '#FFDFCC',
-                    color: '#FE7F32',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    padding: '3px 10px',
-                    borderRadius: '999px',
-                    lineHeight: '1.4',
-                  }}>
-                    Coming Soon
-                  </span>
-                )}
                 <div className="mb-4">{f.icon}</div>
                 <h3 className="font-display text-xl text-hubbs-blue mb-2 group-hover:text-hubbs-orange transition-colors">
                   {f.title}
                 </h3>
                 <p className="text-hubbs-subtle text-sm leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── AI Buddy Section ── */}
+      <section style={{ backgroundColor: '#294C72', padding: '80px 24px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '52px' }}>
+            <span style={{
+              display: 'inline-block',
+              background: '#FE7F32', color: '#fff',
+              fontSize: '11px', fontWeight: '700',
+              padding: '5px 16px', borderRadius: '999px',
+              letterSpacing: '0.1em', marginBottom: '20px',
+              textTransform: 'uppercase',
+            }}>
+              AI Powered
+            </span>
+            <h2 className="font-display" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#FFFFFF', marginBottom: '16px', lineHeight: '1.15' }}>
+              Meet your AI Buddy
+            </h2>
+            <p style={{ color: '#94A6B9', fontSize: '18px', maxWidth: '560px', margin: '0 auto', lineHeight: '1.65' }}>
+              A personal AI that knows your habits, your mood, and your goals — and checks in before you even ask.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+            {[
+              {
+                icon: (
+                  <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 6C10 6 7 9 7 13c0 2.5 1.5 4.7 3.7 5.8L14 25l3.3-6.2C19.5 17.7 21 15.5 21 13c0-4-3-7-7-7z" fill="#FE7F32" opacity="0.2" stroke="#FE7F32" strokeWidth="2" strokeLinejoin="round" />
+                    <path d="M10 13h2l2-4 2 8 2-4h2" stroke="#FE7F32" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ),
+                title: 'Mood-aware nudges',
+                text: 'Your AI notices when you\'ve had a rough few days and reaches out gently.',
+              },
+              {
+                icon: (
+                  <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 20l6-8 5 5 4-7 5 3" stroke="#FE7F32" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="3" y="3" width="22" height="22" rx="4" stroke="#FE7F32" strokeWidth="2" opacity="0.3" />
+                  </svg>
+                ),
+                title: 'Habit coaching',
+                text: 'Personalised suggestions based on your actual streaks and patterns.',
+              },
+              {
+                icon: (
+                  <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="9" cy="9" r="4" stroke="#FE7F32" strokeWidth="2" />
+                    <circle cx="19" cy="9" r="4" stroke="#FE7F32" strokeWidth="2" />
+                    <path d="M3 23c0-3.31 2.69-6 6-6h10c3.31 0 6 2.69 6 6" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                ),
+                title: 'Family insights',
+                text: 'Parents get a quiet heads-up when a child\'s mood or habits need attention.',
+              },
+            ].map((point) => (
+              <div
+                key={point.title}
+                style={{
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '20px',
+                  padding: '28px',
+                }}
+              >
+                <div style={{
+                  width: '52px', height: '52px',
+                  background: 'rgba(254,127,50,0.15)',
+                  borderRadius: '16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '16px',
+                }}>
+                  {point.icon}
+                </div>
+                <h3 style={{ color: '#FFFFFF', fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>{point.title}</h3>
+                <p style={{ color: '#94A6B9', fontSize: '15px', lineHeight: '1.6' }}>{point.text}</p>
               </div>
             ))}
           </div>
@@ -432,10 +593,10 @@ export default function HomePage() {
                 )}
 
                 <div className="mb-6">
-                  <h3 className={`font-display text-2xl mb-2 ${tier.highlight ? 'text-white' : 'text-hubbs-blue'}`}>
+                  <h3 className={`font-display text-2xl mb-3 ${tier.highlight ? 'text-white' : 'text-hubbs-blue'}`}>
                     {tier.name}
                   </h3>
-                  <div className="flex items-baseline gap-1.5">
+                  <div className="flex items-baseline gap-2 flex-wrap">
                     <span
                       key={`${tier.name}-${annual ? 'annual' : 'monthly'}`}
                       className={`price-animate font-display text-4xl font-bold ${tier.highlight ? 'text-hubbs-orange' : 'text-hubbs-blue'}`}
@@ -445,9 +606,14 @@ export default function HomePage() {
                     <span className={`text-sm ${tier.highlight ? 'text-white/60' : 'text-hubbs-subtle'}`}>
                       {tier.period !== 'Forever free' ? '/ ' : ''}{tier.period}
                     </span>
+                    {annual && tier.annualNote && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                        Save 20%
+                      </span>
+                    )}
                   </div>
                   {annual && tier.annualNote && (
-                    <p className={`text-xs mt-1 ${tier.highlight ? 'text-white/50' : 'text-hubbs-subtle'}`}>
+                    <p className={`text-xs mt-1.5 ${tier.highlight ? 'text-white/50' : 'text-hubbs-subtle'}`}>
                       {tier.annualNote}
                     </p>
                   )}
@@ -471,7 +637,7 @@ export default function HomePage() {
                 </ul>
 
                 <a
-                  href="#download"
+                  href="#waitlist"
                   className={`block text-center py-3.5 rounded-2xl font-semibold text-sm transition-colors ${
                     tier.highlight
                       ? 'bg-hubbs-orange text-white hover:bg-hubbs-orange-dark'
@@ -487,27 +653,23 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA / Waitlist ── */}
-      <section className="py-24 px-6 bg-hubbs-blue">
+      <section id="waitlist" className="py-24 px-6 bg-hubbs-blue">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-display text-4xl md:text-5xl text-white mb-4 leading-tight">
             Ready to get started?
           </h2>
           <p className="text-white/65 text-lg mb-10">
-            Join thousands of families building better lives with Hubbs.
+            Be among the first families to build better lives with Hubbs.
           </p>
 
-          {submitted ? (
-            <div className="bg-white/10 border border-white/20 rounded-3xl p-10">
-              <div className="text-5xl mb-3">🎉</div>
-              <h3 className="font-display text-2xl text-hubbs-orange mb-2">You&apos;re on the list!</h3>
-              <p className="text-white/65">We&apos;ll notify you when Hubbs launches in your region.</p>
-            </div>
+          {ctaSubmitted ? (
+            <ThankYouCard onCopy={() => copyWaitlistLink(setCtaCopied)} copied={ctaCopied} />
           ) : (
-            <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <form onSubmit={handleCtaWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={ctaEmail}
+                onChange={(e) => setCtaEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
                 className="flex-1 px-5 py-3.5 rounded-2xl text-hubbs-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hubbs-orange"
@@ -516,7 +678,7 @@ export default function HomePage() {
                 type="submit"
                 className="bg-hubbs-orange text-white px-7 py-3.5 rounded-2xl font-semibold hover:bg-hubbs-orange-dark transition-colors whitespace-nowrap"
               >
-                Join Waitlist
+                Join the Waitlist
               </button>
             </form>
           )}
@@ -544,7 +706,7 @@ export default function HomePage() {
             <nav className="flex flex-wrap gap-6 text-sm justify-center">
               <a href="#features" className="hover:text-hubbs-orange transition-colors">Features</a>
               <a href="#pricing" className="hover:text-hubbs-orange transition-colors">Pricing</a>
-              <a href="#download" className="hover:text-hubbs-orange transition-colors">Download</a>
+              <a href="#waitlist" className="hover:text-hubbs-orange transition-colors">Join Waitlist</a>
               <a href="/privacy" className="hover:text-hubbs-orange transition-colors">Privacy Policy</a>
               <a href="/terms" className="hover:text-hubbs-orange transition-colors">Terms of Service</a>
               <a href="mailto:support@hubbsapp.com" className="hover:text-hubbs-orange transition-colors">Contact</a>
