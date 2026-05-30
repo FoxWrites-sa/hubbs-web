@@ -60,14 +60,16 @@ export async function POST(request: NextRequest) {
             <tr><td align="center">
               <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:24px;padding:40px 32px;box-shadow:0 4px 40px rgba(41,76,114,0.1);">
                 <tr><td align="center" style="padding-bottom:24px;">
-                  <svg width="40" height="48" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="9" cy="6" r="6" fill="#FE7F32"/>
-                    <rect x="4" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
-                    <circle cx="27" cy="6" r="6" fill="#FE7F32"/>
-                    <rect x="22" y="14" width="10" height="22" rx="5" fill="#FE7F32"/>
-                    <rect x="14" y="20" width="8" height="8" rx="2" fill="#FE7F32"/>
-                  </svg>
-                  <div style="font-weight:700;font-size:22px;color:#294C72;margin-top:8px;letter-spacing:-0.5px;">hubbs</div>
+                  <div style="text-align: center; margin-bottom: 32px;">
+                    <svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="20" cy="8" r="6" fill="#FE7F32"/>
+                      <rect x="14" y="16" width="12" height="18" rx="6" fill="#FE7F32"/>
+                      <circle cx="44" cy="8" r="6" fill="#FE7F32"/>
+                      <rect x="38" y="16" width="12" height="18" rx="6" fill="#FE7F32"/>
+                      <rect x="26" y="20" width="12" height="8" rx="3" fill="#FE7F32"/>
+                    </svg>
+                    <span style="font-size: 24px; font-weight: bold; color: #294C72; margin-left: 8px; vertical-align: middle;">hubbs</span>
+                  </div>
                 </td></tr>
                 <tr><td style="font-size:40px;text-align:center;padding-bottom:16px;">🧡</td></tr>
                 <tr><td align="center" style="padding-bottom:12px;">
