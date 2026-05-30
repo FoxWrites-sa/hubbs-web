@@ -99,8 +99,8 @@ const features = [
         <path d="M14 3v22M3 9l11 6 11-6" stroke="#FE7F32" strokeWidth="2" strokeLinejoin="round" />
       </svg>
     ),
-    title: 'Prayer Times',
-    desc: 'Accurate prayer times and Qibla direction wherever you are, with beautiful azan notifications.',
+    title: 'Prayer Tracker',
+    desc: 'Track all 5 daily prayers — Fajr, Dhuhr, Asr, Maghrib, and Isha. Build streaks and stay spiritually consistent every day.',
   },
   {
     icon: (
@@ -147,13 +147,15 @@ const features = [
 const tiers = [
   {
     name: 'Free',
-    price: '$0',
+    monthlyPrice: '$0',
+    annualPrice: '$0',
     period: 'Forever free',
-    badge: null,
+    annualNote: null as string | null,
+    badge: null as string | null,
     features: [
       '1 family member',
       '3 active habits',
-      'Prayer times & Qibla',
+      'Prayer tracker',
       'Basic articles',
       'Family calendar (view)',
     ],
@@ -161,9 +163,11 @@ const tiers = [
     highlight: false,
   },
   {
-    name: 'Premium',
-    price: '$4.99',
+    name: 'Pro',
+    monthlyPrice: '$7.99',
+    annualPrice: '$5.99',
     period: 'per month',
+    annualNote: 'billed as $71.88/year',
     badge: 'MOST POPULAR',
     features: [
       'Up to 5 family members',
@@ -177,12 +181,14 @@ const tiers = [
   },
   {
     name: 'Family Pro',
-    price: '$9.99',
+    monthlyPrice: '$12.99',
+    annualPrice: '$9.99',
     period: 'per month',
+    annualNote: 'billed as $119.88/year',
     badge: 'BEST VALUE',
     features: [
       'Unlimited family members',
-      'Everything in Premium',
+      'Everything in Pro',
       'Custom family challenges',
       'Advanced analytics',
       'Early feature access',
@@ -197,6 +203,7 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [annual, setAnnual] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -348,10 +355,35 @@ export default function HomePage() {
       {/* ── Pricing ── */}
       <section id="pricing" className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-10">
             <span className="text-hubbs-orange font-semibold text-xs tracking-widest uppercase">Simple Pricing</span>
             <h2 className="font-display text-4xl md:text-5xl text-hubbs-blue mt-3 mb-4">Plans for Every Family</h2>
-            <p className="text-hubbs-subtle">Start free, upgrade when you&apos;re ready.</p>
+            <p className="text-hubbs-subtle mb-8">Start free, upgrade when you&apos;re ready.</p>
+
+            {/* Billing toggle */}
+            <div className="inline-flex items-center bg-white border border-gray-100 shadow-sm rounded-full p-1 gap-1">
+              <button
+                onClick={() => setAnnual(false)}
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  !annual ? 'bg-hubbs-orange text-white shadow-sm' : 'text-hubbs-blue hover:text-hubbs-orange'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setAnnual(true)}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  annual ? 'bg-hubbs-orange text-white shadow-sm' : 'text-hubbs-blue hover:text-hubbs-orange'
+                }`}
+              >
+                Annually
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-colors ${
+                  annual ? 'bg-white/25 text-white' : 'bg-green-100 text-green-700'
+                }`}>
+                  Save 20%
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -379,13 +411,21 @@ export default function HomePage() {
                     {tier.name}
                   </h3>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={`font-display text-4xl font-bold ${tier.highlight ? 'text-hubbs-orange' : 'text-hubbs-blue'}`}>
-                      {tier.price}
+                    <span
+                      key={`${tier.name}-${annual ? 'annual' : 'monthly'}`}
+                      className={`price-animate font-display text-4xl font-bold ${tier.highlight ? 'text-hubbs-orange' : 'text-hubbs-blue'}`}
+                    >
+                      {annual ? tier.annualPrice : tier.monthlyPrice}
                     </span>
                     <span className={`text-sm ${tier.highlight ? 'text-white/60' : 'text-hubbs-subtle'}`}>
-                      / {tier.period}
+                      {tier.period !== 'Forever free' ? '/ ' : ''}{tier.period}
                     </span>
                   </div>
+                  {annual && tier.annualNote && (
+                    <p className={`text-xs mt-1 ${tier.highlight ? 'text-white/50' : 'text-hubbs-subtle'}`}>
+                      {tier.annualNote}
+                    </p>
+                  )}
                 </div>
 
                 <ul className="flex-1 space-y-3 mb-8">
