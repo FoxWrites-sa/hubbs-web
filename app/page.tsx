@@ -104,14 +104,11 @@ const features = [
   },
   {
     icon: (
-      <svg width="28" height="28" fill="none" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="4" width="22" height="16" rx="3" stroke="#FE7F32" strokeWidth="2" />
-        <path d="M9 10h10M9 14h6" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" />
-        <path d="M10 24l4-4 4 4" stroke="#FE7F32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <span style={{ fontSize: '28px', lineHeight: 1 }}>🌐</span>
     ),
-    title: 'AI English Teacher',
-    desc: 'Learn English naturally through daily conversations, corrections, and personalised lessons powered by AI.',
+    title: 'Language Studio',
+    desc: 'Learn English, Arabic, and more — with a personal AI tutor that adapts to your level, your goals, and your family.',
+    subLabel: 'Arabic · French · Urdu — coming soon',
   },
   {
     icon: (
@@ -154,7 +151,7 @@ const tiers = [
       '1 member',
       'Unlimited habits',
       'Unlimited AI chat',
-      'AI English Teacher',
+      'Language Studio',
       'Custom habits',
       'Daily Du\'aa',
       'Full AI access',
@@ -480,6 +477,11 @@ export default function HomePage() {
                   {f.title}
                 </h3>
                 <p className="text-hubbs-subtle text-sm leading-relaxed">{f.desc}</p>
+                {(f as { subLabel?: string }).subLabel && (
+                  <p style={{ color: '#94A6B9', fontSize: '11px', marginTop: '6px' }}>
+                    {(f as { subLabel?: string }).subLabel}
+                  </p>
+                )}
               </div>
             ))}
           </div>
