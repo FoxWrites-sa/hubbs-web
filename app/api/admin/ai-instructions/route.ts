@@ -1,30 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { Redis } from '@upstash/redis';
 
-function backendHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    token: process.env.ADMIN_SECRET_TOKEN!,
-  };
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
+
+const REDIS_KEY = 'ai_instructions';
+const REDIS_TS_KEY = 'ai_instructions_timestamps';
+
+type InstructionsMap = Record<string, string>;
+type TimestampsMap = Record<string, string | null>;
+
+function syncToBackend(value: InstructionsMap) {
+  const backendUrl = process.env.BACKEND_URL;
+  if (!backendUrl) return;
+  fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      token: process.env.ADMIN_SECRET_TOKEN!,
+    },
+    body: JSON.stringify({ value }),
+  }).catch(() => {});
 }
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) return NextResponse.json({ instructions: '', updated_at: null });
-
   try {
-    const res = await fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
-      headers: backendHeaders(),
-      cache: 'no-store',
+    const [instructions, timestamps] = await Promise.all([
+      redis.get<InstructionsMap>(REDIS_KEY),
+      redis.get<TimestampsMap>(REDIS_TS_KEY),
+    ]);
+    return NextResponse.json({
+      instructions: instructions ?? {},
+      timestamps: timestamps ?? {},
     });
-    const data = await res.json();
-    return NextResponse.json(data);
   } catch {
-    return NextResponse.json({ instructions: '', updated_at: null });
+    return NextResponse.json({ instructions: {}, timestamps: {} });
   }
 }
 
@@ -32,41 +49,60 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) return NextResponse.json({ error: 'BACKEND_URL not configured' }, { status: 500 });
-
   try {
-    const body = await request.json();
-    const res = await fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
-      method: 'POST',
-      headers: backendHeaders(),
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json({ error: err }, { status: res.status });
+    const { agent, instructions } = await request.json();
+    if (!agent || typeof instructions !== 'string') {
+      return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
     }
-    const data = await res.json();
-    return NextResponse.json(data);
+
+    const [existing, existingTs] = await Promise.all([
+      redis.get<InstructionsMap>(REDIS_KEY),
+      redis.get<TimestampsMap>(REDIS_TS_KEY),
+    ]);
+
+    const updated: InstructionsMap = { ...(existing ?? {}), [agent]: instructions };
+    const updatedTs: TimestampsMap = { ...(existingTs ?? {}), [agent]: new Date().toISOString() };
+
+    await Promise.all([
+      redis.set(REDIS_KEY, updated),
+      redis.set(REDIS_TS_KEY, updatedTs),
+    ]);
+
+    syncToBackend(updated);
+
+    return NextResponse.json({ success: true, updated_at: updatedTs[agent] });
   } catch {
-    return NextResponse.json({ error: 'Backend unreachable' }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) return NextResponse.json({ error: 'BACKEND_URL not configured' }, { status: 500 });
-
   try {
-    await fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
-      method: 'DELETE',
-      headers: backendHeaders(),
-    });
+    const { agent } = await request.json();
+    if (!agent) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+
+    const [existing, existingTs] = await Promise.all([
+      redis.get<InstructionsMap>(REDIS_KEY),
+      redis.get<TimestampsMap>(REDIS_TS_KEY),
+    ]);
+
+    const updated: InstructionsMap = { ...(existing ?? {}) };
+    const updatedTs: TimestampsMap = { ...(existingTs ?? {}) };
+    delete updated[agent];
+    delete updatedTs[agent];
+
+    await Promise.all([
+      redis.set(REDIS_KEY, updated),
+      redis.set(REDIS_TS_KEY, updatedTs),
+    ]);
+
+    syncToBackend(updated);
+
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Backend unreachable' }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to clear' }, { status: 500 });
   }
 }

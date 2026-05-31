@@ -373,133 +373,225 @@ function NotificationsTab() {
 
 const MAX_INSTRUCTIONS = 1000;
 
+const AI_AGENTS = [
+  {
+    id: 'buddy',
+    label: 'Buddy',
+    icon: '🤖',
+    description: "The main AI companion. Instructions are appended to every Buddy conversation, after the user's personalized context.",
+    defaultPrompt: `You are {ai_name}, the AI companion for {user_name}, created by Hubbs.
+You are warm, clever, and deeply personal — you know {user_name} well.
+You can help with ANYTHING — general knowledge, science, coding, writing, advice, creativity, and more.
+You know {user_name}'s habits, mood, goals, and family context, and weave this in naturally.`,
+  },
+  {
+    id: 'guardian',
+    label: 'Guardian',
+    icon: '🛡',
+    description: 'Family safety AI. Instructions shape how Guardian analyses content and provides parental insights.',
+    defaultPrompt: `You are Guardian, a family safety AI for Hubbs.
+Your role is to help parents understand their family's digital activity, flag concerns, and provide constructive guidance.
+Be calm, factual, and supportive — not alarmist.`,
+  },
+  {
+    id: 'english_teacher',
+    label: 'English Teacher',
+    icon: '📚',
+    description: 'The AI English Teacher that runs language learning sessions. Instructions are appended after the session system prompt.',
+    defaultPrompt: `You are an AI English Teacher for Hubbs.
+Guide the student through lessons tailored to their level and goals.
+Be encouraging, patient, and pedagogically precise.
+Correct errors gently, explain rules clearly, and keep lessons engaging.`,
+  },
+  {
+    id: 'challenge_generator',
+    label: 'Challenge Coach',
+    icon: '🏆',
+    description: 'The Challenge Coach that motivates groups during family challenges. Instructions are appended to the challenge context.',
+    defaultPrompt: `You are an AI coach helping a group complete a challenge together.
+Encourage and motivate the group, give helpful tips, celebrate progress.
+Keep responses short (2-3 sentences max). Be supportive and positive.
+Match the language of the user (Arabic or English).`,
+  },
+];
+
 function AIInstructionsTab() {
-  const [instructions, setInstructions] = useState('');
-  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [activeAgent, setActiveAgent] = useState('buddy');
+  const [instructions, setInstructions] = useState<Record<string, string>>({});
+  const [timestamps, setTimestamps] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [clearing, setClearing] = useState<Record<string, boolean>>({});
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
+  const [showDefault, setShowDefault] = useState<Record<string, boolean>>({});
+  const [msgs, setMsgs] = useState<Record<string, { ok: boolean; text: string } | null>>({});
 
   useEffect(() => {
     fetch('/api/admin/ai-instructions')
       .then((r) => r.json())
-      .then((d) => { setInstructions(d.instructions ?? ''); setSavedAt(d.updated_at ?? null); setLoading(false); })
+      .then((d) => {
+        setInstructions(d.instructions ?? {});
+        setTimestamps(d.timestamps ?? {});
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
-    if (instructions.length > MAX_INSTRUCTIONS) {
-      setSaveMsg({ ok: false, text: `Instructions must be ${MAX_INSTRUCTIONS} characters or fewer.` });
-      return;
-    }
-    setSaving(true); setSaveMsg(null);
+  const setAgentText = (agent: string, text: string) =>
+    setInstructions((prev) => ({ ...prev, [agent]: text.slice(0, MAX_INSTRUCTIONS) }));
+
+  const handleSave = async (agent: string) => {
+    const text = instructions[agent] ?? '';
+    setSaving((prev) => ({ ...prev, [agent]: true }));
+    setMsgs((prev) => ({ ...prev, [agent]: null }));
     try {
       const res = await fetch('/api/admin/ai-instructions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instructions }),
+        body: JSON.stringify({ agent, instructions: text }),
       });
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
-      setSavedAt(data.updated_at ?? new Date().toISOString());
-      setSaveMsg({ ok: true, text: 'Instructions saved successfully!' });
+      setTimestamps((prev) => ({ ...prev, [agent]: data.updated_at ?? new Date().toISOString() }));
+      setMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Saved successfully.' } }));
     } catch {
-      setSaveMsg({ ok: false, text: 'Failed to save instructions. Check that BACKEND_URL is configured.' });
+      setMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'Failed to save. Check KV_REST_API_URL is set.' } }));
     } finally {
-      setSaving(false);
+      setSaving((prev) => ({ ...prev, [agent]: false }));
     }
   };
 
-  const handleClear = async () => {
-    setClearing(true); setSaveMsg(null);
+  const handleClear = async (agent: string) => {
+    setClearing((prev) => ({ ...prev, [agent]: true }));
+    setMsgs((prev) => ({ ...prev, [agent]: null }));
     try {
-      await fetch('/api/admin/ai-instructions', { method: 'DELETE' });
-      setInstructions('');
-      setSavedAt(null);
-      setSaveMsg({ ok: true, text: 'Instructions cleared ✓' });
+      const res = await fetch('/api/admin/ai-instructions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setInstructions((prev) => { const n = { ...prev }; delete n[agent]; return n; });
+      setTimestamps((prev) => { const n = { ...prev }; delete n[agent]; return n; });
+      setMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Instructions cleared.' } }));
     } catch {
-      setSaveMsg({ ok: false, text: 'Failed to clear instructions.' });
+      setMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'Failed to clear.' } }));
     } finally {
-      setClearing(false);
-      setShowConfirm(false);
+      setClearing((prev) => ({ ...prev, [agent]: false }));
+      setShowConfirm(null);
     }
   };
 
-  const charCount = instructions.length;
+  const agent = AI_AGENTS.find((a) => a.id === activeAgent)!;
+  const text = instructions[activeAgent] ?? '';
+  const charCount = text.length;
   const counterColor = charCount > 950 ? '#EF4444' : charCount > 800 ? '#FE7F32' : '#6B7280';
+  const ts = timestamps[activeAgent] ?? null;
+  const isSaving = saving[activeAgent] ?? false;
+  const isClearing = clearing[activeAgent] ?? false;
+  const msg = msgs[activeAgent] ?? null;
+  const defaultOpen = showDefault[activeAgent] ?? false;
 
   return (
-    <div style={{ maxWidth: '720px' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#F9FAFB', marginTop: 0 }}>AI Buddy Instructions</h2>
+    <div style={{ maxWidth: '760px' }}>
+      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#F9FAFB', marginTop: 0 }}>AI Instructions</h2>
       <p style={{ color: '#9CA3AF', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>
-        These instructions are added to every conversation with Buddy. Use this to update Buddy&apos;s personality, add announcements, seasonal messages, or special instructions.
+        Inject custom instructions into each AI agent. Changes take effect immediately for new conversations.
       </p>
+
+      {/* Agent tab bar */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: '#1F2937', borderRadius: '10px', padding: '4px' }}>
+        {AI_AGENTS.map((a) => {
+          const active = activeAgent === a.id;
+          const hasContent = !!(instructions[a.id]?.trim());
+          return (
+            <button key={a.id} onClick={() => setActiveAgent(a.id)}
+              style={{ flex: 1, padding: '8px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: active ? '700' : '500', background: active ? '#111827' : 'transparent', color: active ? '#FE7F32' : '#9CA3AF', transition: 'all 0.15s', position: 'relative' as const }}>
+              <span style={{ marginRight: '6px' }}>{a.icon}</span>
+              {a.label}
+              {hasContent && <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', marginLeft: '6px', verticalAlign: 'middle' }} />}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? <p style={{ color: '#6B7280' }}>Loading…</p> : (
-        <>
+        <div>
+          {/* Agent description */}
+          <p style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '16px', lineHeight: '1.6' }}>{agent.description}</p>
+
+          {/* Collapsible default prompt */}
+          <div style={{ marginBottom: '16px' }}>
+            <button onClick={() => setShowDefault((prev) => ({ ...prev, [activeAgent]: !defaultOpen }))}
+              style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '12px', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}>
+              <span style={{ display: 'inline-block', transform: defaultOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>▶</span>
+              {defaultOpen ? 'Hide' : 'Show'} default prompt
+            </button>
+            {defaultOpen && (
+              <div style={{ marginTop: '8px', background: '#0F1923', border: '1px solid #1F2937', borderRadius: '8px', padding: '14px', color: '#6B7280', fontSize: '12px', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontFamily: 'monospace', maxHeight: '160px', overflowY: 'auto' }}>
+                {agent.defaultPrompt}
+              </div>
+            )}
+          </div>
+
+          {/* Textarea */}
           <div style={{ background: '#1F2937', borderRadius: '12px', padding: '20px', border: '1px solid #374151', marginBottom: '16px' }}>
             <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value.slice(0, MAX_INSTRUCTIONS))}
-              rows={10}
-              placeholder={"Add custom instructions for Buddy...\nExample: 'During Ramadan, acknowledge the holy month and adjust your tone accordingly.'\nExample: 'We just launched Family Pro — mention it naturally when relevant.'"}
+              value={text}
+              onChange={(e) => setAgentText(activeAgent, e.target.value)}
+              rows={9}
+              placeholder={`Add custom instructions for ${agent.label}...\nThese are appended after the default system prompt.\nExample: 'During Ramadan, acknowledge the holy month naturally.'`}
               style={{ width: '100%', background: '#111827', border: `1px solid ${charCount > 950 ? '#EF4444' : '#374151'}`, borderRadius: '8px', padding: '12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', resize: 'vertical' as const, lineHeight: '1.6', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
               <span style={{ fontSize: '12px', color: counterColor, fontWeight: charCount > 800 ? '600' : '400' }}>
-                {charCount} / {MAX_INSTRUCTIONS} characters
+                {charCount} / {MAX_INSTRUCTIONS}
               </span>
-              {savedAt && <span style={{ fontSize: '12px', color: '#6B7280' }}>Last saved: {new Date(savedAt).toLocaleString()}</span>}
+              {ts && <span style={{ fontSize: '12px', color: '#4B5563' }}>Saved {new Date(ts).toLocaleString()}</span>}
             </div>
           </div>
 
-          {saveMsg && <p style={{ marginBottom: '12px', fontSize: '14px', color: saveMsg.ok ? '#10B981' : '#EF4444' }}>{saveMsg.text}</p>}
+          {msg && (
+            <p style={{ marginBottom: '12px', fontSize: '14px', color: msg.ok ? '#10B981' : '#EF4444' }}>{msg.text}</p>
+          )}
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' as const }}>
-            <button onClick={handleSave} disabled={saving || charCount > MAX_INSTRUCTIONS}
-              style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', fontSize: '15px', cursor: saving ? 'wait' : 'pointer', opacity: saving || charCount > MAX_INSTRUCTIONS ? 0.6 : 1 }}>
-              {saving ? 'Saving…' : 'Save Instructions'}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' as const }}>
+            <button onClick={() => handleSave(activeAgent)} disabled={isSaving || charCount > MAX_INSTRUCTIONS}
+              style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '11px 28px', fontWeight: '700', fontSize: '14px', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving || charCount > MAX_INSTRUCTIONS ? 0.6 : 1 }}>
+              {isSaving ? 'Saving…' : `Save ${agent.label} Instructions`}
             </button>
-            {instructions.trim() && (
-              <button onClick={() => setShowConfirm(true)} disabled={clearing}
-                style={{ background: 'transparent', color: '#EF4444', border: '1px solid #EF4444', borderRadius: '8px', padding: '12px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
-                🗑 Clear Instructions
+            {text.trim() && (
+              <button onClick={() => setShowConfirm(activeAgent)} disabled={isClearing}
+                style={{ background: 'transparent', color: '#EF4444', border: '1px solid #EF4444', borderRadius: '8px', padding: '11px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                Clear
               </button>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Confirmation dialog */}
-          {showConfirm && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-              <div style={{ background: '#1F2937', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '90%', border: '1px solid #374151', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-                <h3 style={{ color: '#F9FAFB', fontSize: '18px', fontWeight: '700', marginTop: 0, marginBottom: '12px' }}>Clear AI Instructions?</h3>
-                <p style={{ color: '#9CA3AF', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-                  This will remove all custom instructions from Buddy immediately. Are you sure?
-                </p>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setShowConfirm(false)}
-                    style={{ padding: '10px 20px', background: '#374151', border: 'none', borderRadius: '8px', color: '#F9FAFB', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
-                    Cancel
-                  </button>
-                  <button onClick={handleClear} disabled={clearing}
-                    style={{ padding: '10px 20px', background: '#EF4444', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', cursor: clearing ? 'wait' : 'pointer', fontWeight: '700' }}>
-                    {clearing ? 'Clearing…' : 'Clear'}
-                  </button>
-                </div>
-              </div>
+      {/* Confirmation modal */}
+      {showConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: '#1F2937', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '90%', border: '1px solid #374151', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+            <h3 style={{ color: '#F9FAFB', fontSize: '18px', fontWeight: '700', marginTop: 0, marginBottom: '12px' }}>
+              Clear {AI_AGENTS.find((a) => a.id === showConfirm)?.label} Instructions?
+            </h3>
+            <p style={{ color: '#9CA3AF', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+              This removes the custom instructions for this agent immediately. The default prompt remains active.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowConfirm(null)}
+                style={{ padding: '10px 20px', background: '#374151', border: 'none', borderRadius: '8px', color: '#F9FAFB', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+                Cancel
+              </button>
+              <button onClick={() => handleClear(showConfirm)} disabled={isClearing}
+                style={{ padding: '10px 20px', background: '#EF4444', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', cursor: isClearing ? 'wait' : 'pointer', fontWeight: '700' }}>
+                {isClearing ? 'Clearing…' : 'Clear'}
+              </button>
             </div>
-          )}
-
-          {instructions.trim() && (
-            <div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', color: '#F9FAFB' }}>Current active instructions:</h3>
-              <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '16px', color: '#9CA3AF', fontSize: '14px', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                {instructions}
-              </div>
-            </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
     </div>
   );
