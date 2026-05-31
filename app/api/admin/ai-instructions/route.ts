@@ -14,17 +14,31 @@ const REDIS_TS_KEY = 'ai_instructions_timestamps';
 type InstructionsMap = Record<string, string>;
 type TimestampsMap = Record<string, string | null>;
 
-function syncToBackend(value: InstructionsMap) {
+function backendHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    token: process.env.ADMIN_SECRET_TOKEN!,
+  };
+}
+
+async function syncToBackend(value: InstructionsMap) {
   const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) return;
-  fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      token: process.env.ADMIN_SECRET_TOKEN!,
-    },
-    body: JSON.stringify({ value }),
-  }).catch(() => {});
+  if (!backendUrl) {
+    console.warn('[ai-instructions] BACKEND_URL not set — skipping MongoDB sync');
+    return;
+  }
+  try {
+    const res = await fetch(`${backendUrl}/admin/dashboard/ai-instructions`, {
+      method: 'POST',
+      headers: backendHeaders(),
+      body: JSON.stringify({ value }),
+    });
+    if (!res.ok) {
+      console.error(`[ai-instructions] backend sync failed: ${res.status} ${await res.text()}`);
+    }
+  } catch (err) {
+    console.error('[ai-instructions] backend sync error:', err);
+  }
 }
 
 export async function GET() {
@@ -68,7 +82,8 @@ export async function POST(request: NextRequest) {
       redis.set(REDIS_TS_KEY, updatedTs),
     ]);
 
-    syncToBackend(updated);
+    // Sync full merged dict to backend MongoDB (non-blocking but logged)
+    void syncToBackend(updated);
 
     return NextResponse.json({ success: true, updated_at: updatedTs[agent] });
   } catch {
@@ -99,7 +114,8 @@ export async function DELETE(request: NextRequest) {
       redis.set(REDIS_TS_KEY, updatedTs),
     ]);
 
-    syncToBackend(updated);
+    // Sync cleared state to backend (non-blocking but logged)
+    void syncToBackend(updated);
 
     return NextResponse.json({ success: true });
   } catch {
