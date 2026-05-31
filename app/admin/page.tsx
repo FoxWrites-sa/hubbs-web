@@ -379,39 +379,24 @@ const AI_AGENTS = [
     label: 'Buddy',
     icon: '🤖',
     description: "The main AI companion. Instructions are appended to every Buddy conversation, after the user's personalized context.",
-    defaultPrompt: `You are {ai_name}, the AI companion for {user_name}, created by Hubbs.
-You are warm, clever, and deeply personal — you know {user_name} well.
-You can help with ANYTHING — general knowledge, science, coding, writing, advice, creativity, and more.
-You know {user_name}'s habits, mood, goals, and family context, and weave this in naturally.`,
   },
   {
     id: 'guardian',
     label: 'Guardian',
     icon: '🛡',
-    description: 'Family safety AI. Instructions shape how Guardian analyses content and provides parental insights.',
-    defaultPrompt: `You are Guardian, a family safety AI for Hubbs.
-Your role is to help parents understand their family's digital activity, flag concerns, and provide constructive guidance.
-Be calm, factual, and supportive — not alarmist.`,
+    description: 'Family safety AI. Instructions shape how Guardian nudges users with wellbeing insights and gentle habit reminders.',
   },
   {
     id: 'english_teacher',
-    label: 'English Teacher',
-    icon: '📚',
-    description: 'The AI English Teacher that runs language learning sessions. Instructions are appended after the session system prompt.',
-    defaultPrompt: `You are an AI English Teacher for Hubbs.
-Guide the student through lessons tailored to their level and goals.
-Be encouraging, patient, and pedagogically precise.
-Correct errors gently, explain rules clearly, and keep lessons engaging.`,
+    label: 'Language Studio',
+    icon: '🌐',
+    description: 'Instructions for the Language Studio agent. Controls teaching style and lesson approach.',
   },
   {
     id: 'challenge_generator',
     label: 'Challenge Coach',
     icon: '🏆',
     description: 'The Challenge Coach that motivates groups during family challenges. Instructions are appended to the challenge context.',
-    defaultPrompt: `You are an AI coach helping a group complete a challenge together.
-Encourage and motivate the group, give helpful tips, celebrate progress.
-Keep responses short (2-3 sentences max). Be supportive and positive.
-Match the language of the user (Arabic or English).`,
   },
 ];
 
@@ -425,6 +410,13 @@ function AIInstructionsTab() {
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [showDefault, setShowDefault] = useState<Record<string, boolean>>({});
   const [msgs, setMsgs] = useState<Record<string, { ok: boolean; text: string } | null>>({});
+  const [agentPrompts, setAgentPrompts] = useState<Record<string, string>>({
+    buddy: 'Loading…',
+    guardian: 'Loading…',
+    english_teacher: 'Loading…',
+    challenge_generator: 'Loading…',
+  });
+  const [promptsLoading, setPromptsLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/admin/ai-instructions')
@@ -435,6 +427,14 @@ function AIInstructionsTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetch('/api/admin/agent-prompts')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error) setAgentPrompts(d);
+      })
+      .catch(console.error)
+      .finally(() => setPromptsLoading(false));
   }, []);
 
   const setAgentText = (agent: string, text: string) =>
@@ -520,16 +520,24 @@ function AIInstructionsTab() {
           {/* Agent description */}
           <p style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '16px', lineHeight: '1.6' }}>{agent.description}</p>
 
-          {/* Collapsible default prompt */}
+          {/* Collapsible live system prompt */}
           <div style={{ marginBottom: '16px' }}>
             <button onClick={() => setShowDefault((prev) => ({ ...prev, [activeAgent]: !defaultOpen }))}
               style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '12px', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}>
               <span style={{ display: 'inline-block', transform: defaultOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>▶</span>
-              {defaultOpen ? 'Hide' : 'Show'} default prompt
+              {defaultOpen ? 'Hide' : 'Show'} system prompt
             </button>
             {defaultOpen && (
-              <div style={{ marginTop: '8px', background: '#0F1923', border: '1px solid #1F2937', borderRadius: '8px', padding: '14px', color: '#6B7280', fontSize: '12px', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontFamily: 'monospace', maxHeight: '160px', overflowY: 'auto' }}>
-                {agent.defaultPrompt}
+              <div style={{ marginTop: '8px' }}>
+                {promptsLoading ? (
+                  <div style={{ background: '#0F1923', border: '1px solid #1F2937', borderRadius: '8px', padding: '14px', color: '#6B7280', fontSize: '12px', fontStyle: 'italic' }}>
+                    Fetching live prompt from backend…
+                  </div>
+                ) : (
+                  <pre style={{ background: '#0a1628', color: '#94A6B9', padding: '16px', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '300px', overflowY: 'auto', margin: 0, border: '1px solid #1F2937', lineHeight: '1.7' }}>
+                    {agentPrompts[activeAgent] ?? 'Prompt not available — check BACKEND_URL env var.'}
+                  </pre>
+                )}
               </div>
             )}
           </div>
