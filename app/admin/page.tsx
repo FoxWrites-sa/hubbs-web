@@ -1,9 +1,18 @@
 'use client';
 
-// TODO: Replace hardcoded password with proper auth (NextAuth or Clerk) before scaling.
-const ADMIN_PASSWORD = 'hubbs2025admin';
-
+import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, useCallback } from 'react';
+
+type Tab = 'overview' | 'users' | 'notifications' | 'ai-instructions' | 'waitlist';
+
+interface User {
+  _id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  subscription_tier?: string;
+  created_at?: string;
+}
 
 interface WaitlistEntry {
   email: string;
@@ -13,200 +22,572 @@ interface WaitlistEntry {
   device: string;
 }
 
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
+interface NotifHistory {
+  title: string;
+  message: string;
+  audience: string;
+  sent_at: string;
+  recipient_count: number;
 }
 
-function exportCsv(entries: WaitlistEntry[]) {
-  const rows = [
-    ['#', 'Email', 'Date', 'Country', 'Device', 'Source'],
-    ...entries.map((e, i) => [
-      String(i + 1),
-      e.email,
-      formatDate(e.timestamp),
-      e.country,
-      e.device,
-      e.source,
-    ]),
-  ];
-  const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `hubbs-waitlist-${date}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const NAV_ITEMS = [
+  { id: 'overview', label: 'Overview', icon: '📊' },
+  { id: 'users', label: 'Users', icon: '👥' },
+  { id: 'notifications', label: 'Notifications', icon: '🔔' },
+  { id: 'ai-instructions', label: 'AI Instructions', icon: '🤖' },
+  { id: 'waitlist', label: 'Waitlist', icon: '📧' },
+];
 
-export default function AdminPage() {
-  const [authed, setAuthed] = useState(false);
-  const [pw, setPw] = useState('');
-  const [error, setError] = useState('');
-  const [entries, setEntries] = useState<WaitlistEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+const TIER_COLORS: Record<string, string> = {
+  premium: '#FE7F32',
+  pro_family: '#8B5CF6',
+  free: '#6B7280',
+};
+
+const TIER_LABELS: Record<string, string> = {
+  premium: 'Pro',
+  pro_family: 'Family Pro',
+  free: 'Free',
+};
+
+// ── Overview Tab ──────────────────────────────────────────────────────────────
+
+function OverviewTab() {
+  const [stats, setStats] = useState<Record<string, number> | null>(null);
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('hubbs_admin') === '1') {
-      setAuthed(true);
-    }
-  }, []);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/entries', {
-        headers: { 'x-admin-password': ADMIN_PASSWORD },
-      });
-      if (!res.ok) throw new Error('Unauthorized');
-      const data = await res.json();
-      setEntries(data.entries ?? []);
-    } catch {
-      setEntries([]);
-    } finally {
+    Promise.all([
+      fetch('/api/admin/stats').then((r) => r.json()).catch(() => ({})),
+      fetch('/api/admin/entries').then((r) => r.json()).catch(() => ({ entries: [] })),
+    ]).then(([statsData, waitlistData]) => {
+      setStats(statsData);
+      setWaitlistCount(waitlistData.entries?.length ?? 0);
       setLoading(false);
-    }
+    });
   }, []);
 
-  useEffect(() => {
-    if (authed) load();
-  }, [authed, load]);
-
-  function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem('hubbs_admin', '1');
-      setAuthed(true);
-      setError('');
-    } else {
-      setError('Incorrect password.');
-    }
-  }
-
-  function handleLogout() {
-    sessionStorage.removeItem('hubbs_admin');
-    setAuthed(false);
-    setEntries([]);
-  }
-
-  const today = entries.filter(
-    (e) => new Date(e.timestamp).toDateString() === new Date().toDateString()
-  ).length;
-
-  if (!authed) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#FFFBF7', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <div style={{ background: '#fff', borderRadius: '24px', padding: '40px 32px', maxWidth: '360px', width: '100%', boxShadow: '0 4px 40px rgba(41,76,114,0.1)', textAlign: 'center' }}>
-          <div style={{ fontWeight: '700', fontSize: '22px', color: '#294C72', marginBottom: '8px' }}>hubbs admin</div>
-          <p style={{ color: '#5F7995', fontSize: '14px', marginBottom: '24px' }}>Waitlist Dashboard</p>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <input
-              type="password"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="Password"
-              autoFocus
-              style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #e5e7eb', fontSize: '15px', color: '#294C72', outline: 'none' }}
-            />
-            {error && <p style={{ color: '#ef4444', fontSize: '13px', margin: '0' }}>{error}</p>}
-            <button
-              type="submit"
-              style={{ padding: '12px', borderRadius: '12px', background: '#FE7F32', color: '#fff', border: 'none', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
-            >
-              Sign In
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  const cards = [
+    { label: 'Total Users', value: stats?.total_users ?? 0, icon: '👥', color: '#3B82F6' },
+    { label: 'Pro Subscribers', value: stats?.pro_users ?? 0, icon: '⭐', color: '#FE7F32' },
+    { label: 'Family Pro', value: stats?.family_pro_users ?? 0, icon: '👨‍👩‍👧', color: '#8B5CF6' },
+    { label: 'Waitlist Signups', value: waitlistCount ?? '—', icon: '📧', color: '#10B981' },
+    { label: "Today's Signups", value: stats?.today_signups ?? 0, icon: '📅', color: '#F59E0B' },
+    { label: 'Free Users', value: stats?.free_users ?? 0, icon: '🆓', color: '#6B7280' },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F4EF', fontFamily: 'Arial, sans-serif' }}>
-      {/* Header */}
-      <div style={{ background: '#294C72', padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ color: '#fff', fontWeight: '700', fontSize: '20px' }}>hubbs admin</div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={() => exportCsv(entries)}
-            style={{ padding: '8px 18px', borderRadius: '999px', background: '#FE7F32', color: '#fff', border: 'none', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            Export CSV
-          </button>
-          <button
-            onClick={handleLogout}
-            style={{ padding: '8px 18px', borderRadius: '999px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-          >
-            Sign Out
-          </button>
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', color: '#F9FAFB', marginTop: 0 }}>
+        App Overview
+      </h2>
+      {loading ? (
+        <p style={{ color: '#6B7280' }}>Loading stats…</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          {cards.map((c) => (
+            <div key={c.label} style={{ background: '#1F2937', borderRadius: '12px', padding: '20px', border: '1px solid #374151' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '22px' }}>{c.icon}</span>
+                <span style={{ fontSize: '13px', color: '#9CA3AF', fontWeight: '500' }}>{c.label}</span>
+              </div>
+              <div style={{ fontSize: '36px', fontWeight: '800', color: c.color }}>{c.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Users Tab ─────────────────────────────────────────────────────────────────
+
+function UsersTab() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState('all');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/users')
+      .then((r) => r.json())
+      .then((data) => { setUsers(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const filtered = users.filter((u) => {
+    const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.toLowerCase();
+    const email = (u.email ?? '').toLowerCase();
+    const q = search.toLowerCase();
+    const matchSearch = !search || name.includes(q) || email.includes(q);
+    const matchTier = tierFilter === 'all' || (u.subscription_tier ?? 'free') === tierFilter;
+    return matchSearch && matchTier;
+  });
+
+  const updateSubscription = async (userId: string, tier: string) => {
+    setActionLoading(true);
+    try {
+      await fetch(`/api/admin/users/${userId}/subscription`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription_tier: tier }),
+      });
+      setUsers((prev) => prev.map((u) => u._id === userId ? { ...u, subscription_tier: tier } : u));
+    } finally {
+      setActionLoading(false);
+      setOpenDropdown(null);
+    }
+  };
+
+  const tierFilters = [
+    { value: 'all', label: 'All' },
+    { value: 'free', label: 'Free' },
+    { value: 'premium', label: 'Pro' },
+    { value: 'pro_family', label: 'Family Pro' },
+  ];
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: '#F9FAFB', marginTop: 0 }}>
+        Users
+      </h2>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' as const }}>
+        <input
+          type="text"
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: '1', minWidth: '200px', background: '#1F2937', border: '1px solid #374151', borderRadius: '8px', padding: '8px 12px', color: '#F9FAFB', fontSize: '14px', outline: 'none' }}
+        />
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
+          {tierFilters.map((f) => (
+            <button key={f.value} onClick={() => setTierFilter(f.value)}
+              style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', background: tierFilter === f.value ? '#FE7F32' : '#1F2937', color: tierFilter === f.value ? '#fff' : '#9CA3AF' }}>
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'flex', gap: '16px', padding: '24px 32px', flexWrap: 'wrap' }}>
-        {[
-          { label: 'Total Signups', value: entries.length },
-          { label: "Today's Signups", value: today },
-          { label: 'Countries', value: new Set(entries.map((e) => e.country).filter((c) => c !== 'unknown')).size },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            style={{ background: '#fff', borderRadius: '16px', padding: '20px 28px', minWidth: '160px', boxShadow: '0 2px 12px rgba(41,76,114,0.08)' }}
-          >
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#294C72' }}>{stat.value}</div>
-            <div style={{ fontSize: '13px', color: '#5F7995', marginTop: '4px' }}>{stat.label}</div>
-          </div>
-        ))}
-        <button
-          onClick={load}
-          disabled={loading}
-          style={{ padding: '20px 24px', borderRadius: '16px', background: '#fff', border: '1.5px solid #e5e7eb', fontSize: '13px', fontWeight: '600', color: '#294C72', cursor: 'pointer', boxShadow: '0 2px 12px rgba(41,76,114,0.08)' }}
-        >
-          {loading ? 'Refreshing…' : '↻ Refresh'}
-        </button>
-      </div>
-
-      {/* Table */}
-      <div style={{ padding: '0 32px 40px' }}>
-        <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(41,76,114,0.08)' }}>
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#5F7995' }}>Loading…</div>
-          ) : entries.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#5F7995' }}>No signups yet.</div>
-          ) : (
+      {loading ? <p style={{ color: '#6B7280' }}>Loading users…</p> : (
+        <div style={{ background: '#1F2937', borderRadius: '12px', border: '1px solid #374151', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
-                <tr style={{ background: '#F8F4EF' }}>
-                  {['#', 'Email', 'Date', 'Country', 'Device', 'Source'].map((h) => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#294C72', fontWeight: '700', fontSize: '12px', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      {h}
-                    </th>
+                <tr style={{ background: '#111827', color: '#6B7280', textAlign: 'left' }}>
+                  {['Name', 'Email', 'Tier', 'Joined', 'Actions'].map((h) => (
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e, i) => (
-                  <tr key={e.email} style={{ borderTop: '1px solid #f0ece8' }}>
-                    <td style={{ padding: '12px 16px', color: '#94A6B9', fontSize: '12px' }}>{i + 1}</td>
-                    <td style={{ padding: '12px 16px', color: '#294C72', fontWeight: '500' }}>{e.email}</td>
-                    <td style={{ padding: '12px 16px', color: '#5F7995', whiteSpace: 'nowrap' }}>{formatDate(e.timestamp)}</td>
-                    <td style={{ padding: '12px 16px', color: '#5F7995' }}>{e.country}</td>
-                    <td style={{ padding: '12px 16px', color: '#5F7995' }}>{e.device}</td>
-                    <td style={{ padding: '12px 16px', color: '#5F7995' }}>{e.source}</td>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#6B7280' }}>No users found</td></tr>
+                ) : filtered.map((u, i) => {
+                  const tier = u.subscription_tier ?? 'free';
+                  return (
+                    <tr key={u._id} style={{ borderTop: '1px solid #374151', background: i % 2 === 0 ? 'transparent' : 'rgba(55,65,81,0.3)' }}>
+                      <td style={{ padding: '12px 16px', color: '#F9FAFB', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                        {`${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#9CA3AF', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {u.email ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', background: (TIER_COLORS[tier] ?? '#6B7280') + '22', color: TIER_COLORS[tier] ?? '#6B7280', whiteSpace: 'nowrap' }}>
+                          {TIER_LABELS[tier] ?? 'Free'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px', position: 'relative' }}>
+                        <button
+                          onClick={() => setOpenDropdown(openDropdown === u._id ? null : u._id)}
+                          style={{ padding: '6px 12px', background: '#374151', border: 'none', borderRadius: '6px', color: '#F9FAFB', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          Actions ▾
+                        </button>
+                        {openDropdown === u._id && (
+                          <div style={{ position: 'absolute', right: '8px', top: '44px', background: '#111827', border: '1px solid #374151', borderRadius: '8px', zIndex: 50, minWidth: '190px', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+                            {[
+                              { label: 'Upgrade to Pro', tier: 'premium', color: '#FE7F32' },
+                              { label: 'Upgrade to Family Pro', tier: 'pro_family', color: '#8B5CF6' },
+                              { label: 'Downgrade to Free', tier: 'free', color: '#9CA3AF' },
+                            ].map((a) => (
+                              <button key={a.tier} disabled={actionLoading || tier === a.tier}
+                                onClick={() => updateSubscription(u._id, a.tier)}
+                                style={{ display: 'block', width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: tier === a.tier ? '#4B5563' : a.color, fontSize: '13px', cursor: tier === a.tier ? 'default' : 'pointer', textAlign: 'left', fontWeight: '500' }}>
+                                {a.label}{tier === a.tier ? ' ✓' : ''}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Notifications Tab ─────────────────────────────────────────────────────────
+
+function NotificationsTab() {
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [audience, setAudience] = useState('all');
+  const [singleEmail, setSingleEmail] = useState('');
+  const [scheduleNow, setScheduleNow] = useState(true);
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [history, setHistory] = useState<NotifHistory[]>([]);
+
+  const loadHistory = useCallback(() => {
+    fetch('/api/admin/notifications').then((r) => r.json()).then((d) => setHistory(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  const handleSend = async () => {
+    if (!title.trim() || !message.trim()) { setResult({ ok: false, text: 'Title and message are required.' }); return; }
+    setSending(true); setResult(null);
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, message, audience, email: singleEmail, scheduled_at: scheduleNow ? null : scheduledAt }),
+      });
+      const data = await res.json();
+      setResult({ ok: true, text: `Sent to ${data.recipients ?? 0} recipients.` });
+      setTitle(''); setMessage('');
+      loadHistory();
+    } catch {
+      setResult({ ok: false, text: 'Failed to send notification.' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const audiences = [
+    { value: 'all', label: 'All Users' },
+    { value: 'free', label: 'Free Users Only' },
+    { value: 'pro', label: 'Pro Users Only' },
+    { value: 'family', label: 'Family Pro Only' },
+    { value: 'single', label: 'Single User' },
+  ];
+
+  const inputSt: React.CSSProperties = { width: '100%', background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '10px 12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' };
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', color: '#F9FAFB', marginTop: 0 }}>Send Push Notification</h2>
+      <div style={{ background: '#1F2937', borderRadius: '12px', padding: '24px', border: '1px solid #374151', marginBottom: '32px', maxWidth: '640px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '6px', fontWeight: '500' }}>Title (max 50 chars)</label>
+          <input maxLength={50} value={title} onChange={(e) => setTitle(e.target.value)} style={inputSt} />
+          <div style={{ textAlign: 'right', fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>{title.length}/50</div>
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '6px', fontWeight: '500' }}>Message (max 200 chars)</label>
+          <textarea maxLength={200} value={message} onChange={(e) => setMessage(e.target.value)} rows={4} style={{ ...inputSt, resize: 'vertical' as const }} />
+          <div style={{ textAlign: 'right', fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>{message.length}/200</div>
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '8px', fontWeight: '500' }}>Audience</label>
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+            {audiences.map((a) => (
+              <label key={a.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="radio" name="audience" value={a.value} checked={audience === a.value} onChange={() => setAudience(a.value)} style={{ accentColor: '#FE7F32' }} />
+                <span style={{ fontSize: '14px', color: '#F9FAFB' }}>{a.label}</span>
+              </label>
+            ))}
+          </div>
+          {audience === 'single' && (
+            <input type="email" placeholder="user@email.com" value={singleEmail} onChange={(e) => setSingleEmail(e.target.value)} style={{ ...inputSt, marginTop: '10px' }} />
+          )}
+        </div>
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '8px', fontWeight: '500' }}>Schedule</label>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' as const }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input type="radio" name="schedule" checked={scheduleNow} onChange={() => setScheduleNow(true)} style={{ accentColor: '#FE7F32' }} />
+              <span style={{ fontSize: '14px', color: '#F9FAFB' }}>Send now</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input type="radio" name="schedule" checked={!scheduleNow} onChange={() => setScheduleNow(false)} style={{ accentColor: '#FE7F32' }} />
+              <span style={{ fontSize: '14px', color: '#F9FAFB' }}>Schedule for:</span>
+            </label>
+            {!scheduleNow && (
+              <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)}
+                style={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#F9FAFB', fontSize: '14px', outline: 'none' }} />
+            )}
+          </div>
+        </div>
+        {result && <p style={{ marginBottom: '12px', fontSize: '14px', color: result.ok ? '#10B981' : '#EF4444' }}>{result.text}</p>}
+        <button onClick={handleSend} disabled={sending}
+          style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', fontSize: '15px', cursor: sending ? 'wait' : 'pointer', opacity: sending ? 0.7 : 1 }}>
+          {sending ? 'Sending…' : 'Send Notification'}
+        </button>
+      </div>
+
+      <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: '#F9FAFB' }}>Notification History</h3>
+      {history.length === 0 ? <p style={{ color: '#6B7280' }}>No notifications sent yet.</p> : (
+        <div style={{ background: '#1F2937', borderRadius: '12px', border: '1px solid #374151', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ background: '#111827', color: '#6B7280', textAlign: 'left' }}>
+                  {['Title', 'Audience', 'Sent At', 'Recipients'].map((h) => (
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((n, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid #374151' }}>
+                    <td style={{ padding: '12px 16px', color: '#F9FAFB', fontWeight: '500' }}>{n.title}</td>
+                    <td style={{ padding: '12px 16px', color: '#9CA3AF' }}>{n.audience}</td>
+                    <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '13px', whiteSpace: 'nowrap' }}>{n.sent_at ? new Date(n.sent_at).toLocaleString() : '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#FE7F32', fontWeight: '600' }}>{n.recipient_count}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── AI Instructions Tab ───────────────────────────────────────────────────────
+
+function AIInstructionsTab() {
+  const [instructions, setInstructions] = useState('');
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/ai-instructions')
+      .then((r) => r.json())
+      .then((d) => { setInstructions(d.instructions ?? ''); setSavedAt(d.updated_at ?? null); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true); setSaveMsg(null);
+    try {
+      const res = await fetch('/api/admin/ai-instructions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instructions }),
+      });
+      const data = await res.json();
+      setSavedAt(data.updated_at ?? new Date().toISOString());
+      setSaveMsg({ ok: true, text: 'Instructions saved successfully!' });
+    } catch {
+      setSaveMsg({ ok: false, text: 'Failed to save instructions.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '720px' }}>
+      <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#F9FAFB', marginTop: 0 }}>AI Buddy Instructions</h2>
+      <p style={{ color: '#9CA3AF', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>
+        These instructions are added to every conversation with Buddy. Use this to update Buddy&apos;s personality, add announcements, seasonal messages, or special instructions.
+      </p>
+      {loading ? <p style={{ color: '#6B7280' }}>Loading…</p> : (
+        <>
+          <div style={{ background: '#1F2937', borderRadius: '12px', padding: '20px', border: '1px solid #374151', marginBottom: '16px' }}>
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={10}
+              placeholder={"Add custom instructions for Buddy...\nExample: 'During Ramadan, acknowledge the holy month and adjust your tone accordingly.'\nExample: 'We just launched Family Pro — mention it naturally when relevant.'"}
+              style={{ width: '100%', background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', resize: 'vertical' as const, lineHeight: '1.6', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#6B7280' }}>{instructions.length} characters</span>
+              {savedAt && <span style={{ fontSize: '12px', color: '#6B7280' }}>Last saved: {new Date(savedAt).toLocaleString()}</span>}
+            </div>
+          </div>
+          {saveMsg && <p style={{ marginBottom: '12px', fontSize: '14px', color: saveMsg.ok ? '#10B981' : '#EF4444' }}>{saveMsg.text}</p>}
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', fontSize: '15px', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, marginBottom: '32px' }}>
+            {saving ? 'Saving…' : 'Save Instructions'}
+          </button>
+          {instructions.trim() && (
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', color: '#F9FAFB' }}>Current active instructions:</h3>
+              <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '16px', color: '#9CA3AF', fontSize: '14px', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                {instructions}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Waitlist Tab ──────────────────────────────────────────────────────────────
+
+function WaitlistTab() {
+  const [entries, setEntries] = useState<WaitlistEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const today = new Date().toDateString();
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch('/api/admin/entries')
+      .then((r) => r.json())
+      .then((data) => { setEntries(data.entries ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = entries.filter((e) => !search || e.email.toLowerCase().includes(search.toLowerCase()));
+  const todayCount = entries.filter((e) => new Date(e.timestamp).toDateString() === today).length;
+
+  const exportCsv = () => {
+    const rows = [
+      ['Email', 'Signed Up', 'Country', 'Device', 'Source'],
+      ...entries.map((e) => [e.email, new Date(e.timestamp).toLocaleString(), e.country, e.device, e.source]),
+    ];
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'hubbs-waitlist.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' as const, gap: '12px' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '4px', color: '#F9FAFB', marginTop: 0 }}>Waitlist</h2>
+          <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>{entries.length} total · {todayCount} today</p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={load} style={{ padding: '8px 16px', background: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#9CA3AF', fontSize: '13px', cursor: 'pointer' }}>↻ Refresh</button>
+          <button onClick={exportCsv} style={{ padding: '8px 16px', background: '#FE7F32', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Export CSV</button>
+        </div>
+      </div>
+      <input type="text" placeholder="Filter by email…" value={search} onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', background: '#1F2937', border: '1px solid #374151', borderRadius: '8px', padding: '8px 12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', marginBottom: '16px', boxSizing: 'border-box' as const }} />
+      {loading ? <p style={{ color: '#6B7280' }}>Loading…</p> : (
+        <div style={{ background: '#1F2937', borderRadius: '12px', border: '1px solid #374151', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ background: '#111827', color: '#6B7280', textAlign: 'left' }}>
+                  {['Email', 'Signed Up', 'Country', 'Device', 'Source'].map((h) => (
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#6B7280' }}>No entries found</td></tr>
+                ) : filtered.map((e, i) => (
+                  <tr key={e.email} style={{ borderTop: '1px solid #374151', background: i % 2 === 0 ? 'transparent' : 'rgba(55,65,81,0.3)' }}>
+                    <td style={{ padding: '12px 16px', color: '#F9FAFB', fontWeight: '500' }}>{e.email}</td>
+                    <td style={{ padding: '12px 16px', color: '#9CA3AF', fontSize: '13px', whiteSpace: 'nowrap' }}>{new Date(e.timestamp).toLocaleString()}</td>
+                    <td style={{ padding: '12px 16px', color: '#9CA3AF' }}>{e.country}</td>
+                    <td style={{ padding: '12px 16px', color: '#9CA3AF' }}>{e.device}</td>
+                    <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '12px' }}>{e.source}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+const TAB_TITLES: Record<Tab, string> = {
+  overview: 'Overview',
+  users: 'Users',
+  notifications: 'Push Notifications',
+  'ai-instructions': 'AI Instructions',
+  waitlist: 'Waitlist',
+};
+
+export default function AdminPage() {
+  const { data: session } = useSession();
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#111827', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+      {/* Sidebar */}
+      <aside style={{ width: '220px', minWidth: '220px', backgroundColor: '#0F1923', display: 'flex', flexDirection: 'column', borderRight: '1px solid #1F2937' }}>
+        <div style={{ padding: '24px 20px', borderBottom: '1px solid #1F2937' }}>
+          <span style={{ fontSize: '22px', fontWeight: '900', color: '#FE7F32', letterSpacing: '-0.5px' }}>hubbs</span>
+          <span style={{ display: 'block', fontSize: '11px', color: '#4B5563', fontWeight: '600', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin Panel</span>
+        </div>
+        <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+          {NAV_ITEMS.map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button key={item.id} onClick={() => setActiveTab(item.id as Tab)}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '11px 20px', background: active ? 'rgba(254,127,50,0.12)' : 'transparent', border: 'none', borderLeft: active ? '3px solid #FE7F32' : '3px solid transparent', cursor: 'pointer', fontSize: '14px', fontWeight: active ? '600' : '400', color: active ? '#FE7F32' : '#9CA3AF', textAlign: 'left', transition: 'all 0.15s' }}>
+                <span style={{ fontSize: '16px' }}>{item.icon}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #1F2937' }}>
+          <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '0 0 8px 0' }}>
+            {session?.user?.email ?? ''}
+          </p>
+          <button onClick={() => signOut({ callbackUrl: '/admin/login' })}
+            style={{ width: '100%', padding: '8px', background: '#1F2937', border: '1px solid #374151', borderRadius: '6px', color: '#9CA3AF', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+        <header style={{ padding: '16px 28px', borderBottom: '1px solid #1F2937', backgroundColor: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#F9FAFB', margin: 0 }}>{TAB_TITLES[activeTab]}</h1>
+          <span style={{ fontSize: '13px', color: '#6B7280' }}>
+            {now.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </header>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
+          {activeTab === 'overview' && <OverviewTab />}
+          {activeTab === 'users' && <UsersTab />}
+          {activeTab === 'notifications' && <NotificationsTab />}
+          {activeTab === 'ai-instructions' && <AIInstructionsTab />}
+          {activeTab === 'waitlist' && <WaitlistTab />}
+        </main>
       </div>
     </div>
   );

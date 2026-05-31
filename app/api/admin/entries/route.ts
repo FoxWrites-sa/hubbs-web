@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
   token: process.env.KV_REST_API_TOKEN!,
 });
-
-// TODO: Replace hardcoded password with proper auth (NextAuth or Clerk) before scaling.
-const ADMIN_PASSWORD = 'hubbs2025admin';
 
 interface WaitlistEntry {
   email: string;
@@ -17,9 +16,9 @@ interface WaitlistEntry {
   device: string;
 }
 
-export async function GET(request: NextRequest) {
-  const pw = request.headers.get('x-admin-password');
-  if (pw !== ADMIN_PASSWORD) {
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -99,8 +99,8 @@ const features = [
         <path d="M20 8l2-2M23 11h2M20.5 14.5l1.5 1.5" stroke="#FE7F32" strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     ),
-    title: 'AI Buddy',
-    desc: 'A personal AI that knows your habits, your mood, and your goals — and checks in before you even ask.',
+    title: 'Your AI Companion',
+    desc: 'Name your personal AI during setup. It knows your habits, mood, and goals — and checks in when you need it most.',
   },
   {
     icon: (
@@ -486,7 +486,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── AI Buddy Section ── */}
+      {/* ── AI Companion Section ── */}
       <section style={{ backgroundColor: '#294C72', padding: '80px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '52px' }}>
@@ -501,10 +501,13 @@ export default function HomePage() {
               AI Powered
             </span>
             <h2 className="font-display" style={{ fontSize: 'clamp(32px, 5vw, 44px)', color: '#FFFFFF', marginBottom: '16px', lineHeight: '1.15' }}>
-              Meet your AI Buddy
+              Meet Your AI Companion
             </h2>
             <p style={{ color: '#94A6B9', fontSize: '18px', maxWidth: '560px', margin: '0 auto', lineHeight: '1.65' }}>
-              A personal AI that knows your habits, your mood, and your goals — and checks in before you even ask.
+              A personal AI companion you name yourself — one that knows your habits, your mood, and your goals, and checks in before you even ask.
+            </p>
+            <p style={{ color: '#FE7F32', fontSize: '15px', marginTop: '12px', fontStyle: 'italic' }}>
+              Every user names their own AI companion during setup. Yours is waiting. 🧡
             </p>
           </div>
 
