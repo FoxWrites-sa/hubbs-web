@@ -13,7 +13,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   try {
     const body = await request.json();
-    const res = await fetch(`${backendUrl}/admin/users/${params.id}/subscription`, {
+    const res = await fetch(`${backendUrl}/admin/dashboard/users/${params.id}/subscription`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', token: token! },
       body: JSON.stringify(body),

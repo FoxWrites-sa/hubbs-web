@@ -12,7 +12,7 @@ export async function GET() {
   if (!backendUrl) return NextResponse.json({ error: 'BACKEND_URL not configured' }, { status: 500 });
 
   try {
-    const res = await fetch(`${backendUrl}/admin/stats`, {
+    const res = await fetch(`${backendUrl}/admin/dashboard/stats`, {
       headers: { token: token! },
       cache: 'no-store',
     });

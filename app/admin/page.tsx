@@ -371,11 +371,15 @@ function NotificationsTab() {
 
 // ── AI Instructions Tab ───────────────────────────────────────────────────────
 
+const MAX_INSTRUCTIONS = 1000;
+
 function AIInstructionsTab() {
   const [instructions, setInstructions] = useState('');
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -386,6 +390,10 @@ function AIInstructionsTab() {
   }, []);
 
   const handleSave = async () => {
+    if (instructions.length > MAX_INSTRUCTIONS) {
+      setSaveMsg({ ok: false, text: `Instructions must be ${MAX_INSTRUCTIONS} characters or fewer.` });
+      return;
+    }
     setSaving(true); setSaveMsg(null);
     try {
       const res = await fetch('/api/admin/ai-instructions', {
@@ -393,15 +401,34 @@ function AIInstructionsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instructions }),
       });
+      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setSavedAt(data.updated_at ?? new Date().toISOString());
       setSaveMsg({ ok: true, text: 'Instructions saved successfully!' });
     } catch {
-      setSaveMsg({ ok: false, text: 'Failed to save instructions.' });
+      setSaveMsg({ ok: false, text: 'Failed to save instructions. Check that BACKEND_URL is configured.' });
     } finally {
       setSaving(false);
     }
   };
+
+  const handleClear = async () => {
+    setClearing(true); setSaveMsg(null);
+    try {
+      await fetch('/api/admin/ai-instructions', { method: 'DELETE' });
+      setInstructions('');
+      setSavedAt(null);
+      setSaveMsg({ ok: true, text: 'Instructions cleared ✓' });
+    } catch {
+      setSaveMsg({ ok: false, text: 'Failed to clear instructions.' });
+    } finally {
+      setClearing(false);
+      setShowConfirm(false);
+    }
+  };
+
+  const charCount = instructions.length;
+  const counterColor = charCount > 950 ? '#EF4444' : charCount > 800 ? '#FE7F32' : '#6B7280';
 
   return (
     <div style={{ maxWidth: '720px' }}>
@@ -414,21 +441,56 @@ function AIInstructionsTab() {
           <div style={{ background: '#1F2937', borderRadius: '12px', padding: '20px', border: '1px solid #374151', marginBottom: '16px' }}>
             <textarea
               value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
+              onChange={(e) => setInstructions(e.target.value.slice(0, MAX_INSTRUCTIONS))}
               rows={10}
               placeholder={"Add custom instructions for Buddy...\nExample: 'During Ramadan, acknowledge the holy month and adjust your tone accordingly.'\nExample: 'We just launched Family Pro — mention it naturally when relevant.'"}
-              style={{ width: '100%', background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', resize: 'vertical' as const, lineHeight: '1.6', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
+              style={{ width: '100%', background: '#111827', border: `1px solid ${charCount > 950 ? '#EF4444' : '#374151'}`, borderRadius: '8px', padding: '12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', resize: 'vertical' as const, lineHeight: '1.6', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#6B7280' }}>{instructions.length} characters</span>
+              <span style={{ fontSize: '12px', color: counterColor, fontWeight: charCount > 800 ? '600' : '400' }}>
+                {charCount} / {MAX_INSTRUCTIONS} characters
+              </span>
               {savedAt && <span style={{ fontSize: '12px', color: '#6B7280' }}>Last saved: {new Date(savedAt).toLocaleString()}</span>}
             </div>
           </div>
+
           {saveMsg && <p style={{ marginBottom: '12px', fontSize: '14px', color: saveMsg.ok ? '#10B981' : '#EF4444' }}>{saveMsg.text}</p>}
-          <button onClick={handleSave} disabled={saving}
-            style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', fontSize: '15px', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, marginBottom: '32px' }}>
-            {saving ? 'Saving…' : 'Save Instructions'}
-          </button>
+
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' as const }}>
+            <button onClick={handleSave} disabled={saving || charCount > MAX_INSTRUCTIONS}
+              style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 28px', fontWeight: '700', fontSize: '15px', cursor: saving ? 'wait' : 'pointer', opacity: saving || charCount > MAX_INSTRUCTIONS ? 0.6 : 1 }}>
+              {saving ? 'Saving…' : 'Save Instructions'}
+            </button>
+            {instructions.trim() && (
+              <button onClick={() => setShowConfirm(true)} disabled={clearing}
+                style={{ background: 'transparent', color: '#EF4444', border: '1px solid #EF4444', borderRadius: '8px', padding: '12px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+                🗑 Clear Instructions
+              </button>
+            )}
+          </div>
+
+          {/* Confirmation dialog */}
+          {showConfirm && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+              <div style={{ background: '#1F2937', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '90%', border: '1px solid #374151', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+                <h3 style={{ color: '#F9FAFB', fontSize: '18px', fontWeight: '700', marginTop: 0, marginBottom: '12px' }}>Clear AI Instructions?</h3>
+                <p style={{ color: '#9CA3AF', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+                  This will remove all custom instructions from Buddy immediately. Are you sure?
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowConfirm(false)}
+                    style={{ padding: '10px 20px', background: '#374151', border: 'none', borderRadius: '8px', color: '#F9FAFB', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleClear} disabled={clearing}
+                    style={{ padding: '10px 20px', background: '#EF4444', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', cursor: clearing ? 'wait' : 'pointer', fontWeight: '700' }}>
+                    {clearing ? 'Clearing…' : 'Clear'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {instructions.trim() && (
             <div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', color: '#F9FAFB' }}>Current active instructions:</h3>

@@ -12,7 +12,7 @@ export async function GET() {
   if (!backendUrl) return NextResponse.json({ error: 'BACKEND_URL not configured' }, { status: 500 });
 
   try {
-    const res = await fetch(`${backendUrl}/admin/notifications/history`, {
+    const res = await fetch(`${backendUrl}/admin/dashboard/notifications/history`, {
       headers: { token: token! },
       cache: 'no-store',
     });
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const res = await fetch(`${backendUrl}/admin/notifications/send`, {
+    const res = await fetch(`${backendUrl}/admin/dashboard/notifications/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', token: token! },
       body: JSON.stringify(body),
