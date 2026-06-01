@@ -404,19 +404,19 @@ function AIInstructionsTab() {
   const [activeAgent, setActiveAgent] = useState('buddy');
   const [instructions, setInstructions] = useState<Record<string, string>>({});
   const [timestamps, setTimestamps] = useState<Record<string, string | null>>({});
-  const [loading, setLoading] = useState(true);
+  const [addlLoading, setAddlLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [clearing, setClearing] = useState<Record<string, boolean>>({});
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
-  const [showDefault, setShowDefault] = useState<Record<string, boolean>>({});
   const [msgs, setMsgs] = useState<Record<string, { ok: boolean; text: string } | null>>({});
-  const [agentPrompts, setAgentPrompts] = useState<Record<string, string>>({
-    buddy: 'Loading…',
-    guardian: 'Loading…',
-    english_teacher: 'Loading…',
-    challenge_generator: 'Loading…',
-  });
-  const [promptsLoading, setPromptsLoading] = useState(true);
+
+  // Default prompt state (editable .txt files via backend)
+  const [defaultPrompts, setDefaultPrompts] = useState<Record<string, string>>({});
+  const [defaultEdits, setDefaultEdits] = useState<Record<string, string>>({});
+  const [defaultLoading, setDefaultLoading] = useState<Record<string, boolean>>({});
+  const [savingDefault, setSavingDefault] = useState<Record<string, boolean>>({});
+  const [restoringBackup, setRestoringBackup] = useState<Record<string, boolean>>({});
+  const [defaultMsgs, setDefaultMsgs] = useState<Record<string, { ok: boolean; text: string } | null>>({});
 
   useEffect(() => {
     fetch('/api/admin/ai-instructions')
@@ -424,18 +424,68 @@ function AIInstructionsTab() {
       .then((d) => {
         setInstructions(d.instructions ?? {});
         setTimestamps(d.timestamps ?? {});
-        setLoading(false);
+        setAddlLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => setAddlLoading(false));
+  }, []);
 
-    fetch('/api/admin/agent-prompts')
+  // Load default prompt on tab change (lazy per-agent)
+  useEffect(() => {
+    if (defaultPrompts[activeAgent] !== undefined) return;
+    setDefaultLoading((prev) => ({ ...prev, [activeAgent]: true }));
+    fetch(`/api/admin/agent-prompts/${activeAgent}`)
       .then((r) => r.json())
       .then((d) => {
-        if (!d.error) setAgentPrompts(d);
+        const p = d.prompt ?? '';
+        setDefaultPrompts((prev) => ({ ...prev, [activeAgent]: p }));
+        setDefaultEdits((prev) => ({ ...prev, [activeAgent]: p }));
       })
-      .catch(console.error)
-      .finally(() => setPromptsLoading(false));
-  }, []);
+      .catch(() => {
+        setDefaultPrompts((prev) => ({ ...prev, [activeAgent]: '' }));
+        setDefaultEdits((prev) => ({ ...prev, [activeAgent]: '' }));
+      })
+      .finally(() => setDefaultLoading((prev) => ({ ...prev, [activeAgent]: false })));
+  }, [activeAgent]);
+
+  const hasUnsavedDefault =
+    (defaultEdits[activeAgent] ?? '') !== (defaultPrompts[activeAgent] ?? '');
+
+  const handleSaveDefault = async (agent: string) => {
+    setSavingDefault((prev) => ({ ...prev, [agent]: true }));
+    setDefaultMsgs((prev) => ({ ...prev, [agent]: null }));
+    try {
+      const res = await fetch(`/api/admin/agent-prompts/${agent}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: defaultEdits[agent] }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setDefaultPrompts((prev) => ({ ...prev, [agent]: defaultEdits[agent] }));
+      setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Default prompt saved to file.' } }));
+    } catch {
+      setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'Failed to save default prompt.' } }));
+    } finally {
+      setSavingDefault((prev) => ({ ...prev, [agent]: false }));
+    }
+  };
+
+  const handleRestoreBackup = async (agent: string) => {
+    setRestoringBackup((prev) => ({ ...prev, [agent]: true }));
+    setDefaultMsgs((prev) => ({ ...prev, [agent]: null }));
+    try {
+      const res = await fetch(`/api/admin/agent-prompts/${agent}/restore`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      const p = data.prompt ?? '';
+      setDefaultPrompts((prev) => ({ ...prev, [agent]: p }));
+      setDefaultEdits((prev) => ({ ...prev, [agent]: p }));
+      setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Backup restored successfully.' } }));
+    } catch {
+      setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'No backup found or restore failed.' } }));
+    } finally {
+      setRestoringBackup((prev) => ({ ...prev, [agent]: false }));
+    }
+  };
 
   const setAgentText = (agent: string, text: string) =>
     setInstructions((prev) => ({ ...prev, [agent]: text.slice(0, MAX_INSTRUCTIONS) }));
@@ -483,20 +533,32 @@ function AIInstructionsTab() {
   };
 
   const agent = AI_AGENTS.find((a) => a.id === activeAgent)!;
-  const text = instructions[activeAgent] ?? '';
-  const charCount = text.length;
+  const addlText = instructions[activeAgent] ?? '';
+  const charCount = addlText.length;
   const counterColor = charCount > 950 ? '#EF4444' : charCount > 800 ? '#FE7F32' : '#6B7280';
   const ts = timestamps[activeAgent] ?? null;
   const isSaving = saving[activeAgent] ?? false;
   const isClearing = clearing[activeAgent] ?? false;
   const msg = msgs[activeAgent] ?? null;
-  const defaultOpen = showDefault[activeAgent] ?? false;
+  const isDefaultLoading = defaultLoading[activeAgent] ?? false;
+  const isSavingDefault = savingDefault[activeAgent] ?? false;
+  const isRestoringBackup = restoringBackup[activeAgent] ?? false;
+  const defaultMsg = defaultMsgs[activeAgent] ?? null;
+
+  const sectionSt: React.CSSProperties = {
+    background: '#1F2937', borderRadius: '12px', padding: '20px',
+    border: '1px solid #374151', marginBottom: '24px',
+  };
+  const sectionLabelSt: React.CSSProperties = {
+    fontSize: '11px', fontWeight: '700', color: '#6B7280',
+    textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
+  };
 
   return (
-    <div style={{ maxWidth: '760px' }}>
+    <div style={{ maxWidth: '800px' }}>
       <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#F9FAFB', marginTop: 0 }}>AI Instructions</h2>
       <p style={{ color: '#9CA3AF', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>
-        Inject custom instructions into each AI agent. Changes take effect immediately for new conversations.
+        Edit each agent's default system prompt, and optionally inject additional instructions appended at runtime.
       </p>
 
       {/* Agent tab bar */}
@@ -515,68 +577,97 @@ function AIInstructionsTab() {
         })}
       </div>
 
-      {loading ? <p style={{ color: '#6B7280' }}>Loading…</p> : (
-        <div>
-          {/* Agent description */}
-          <p style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '16px', lineHeight: '1.6' }}>{agent.description}</p>
+      <p style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '20px', lineHeight: '1.6' }}>{agent.description}</p>
 
-          {/* Collapsible live system prompt */}
-          <div style={{ marginBottom: '16px' }}>
-            <button onClick={() => setShowDefault((prev) => ({ ...prev, [activeAgent]: !defaultOpen }))}
-              style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '12px', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}>
-              <span style={{ display: 'inline-block', transform: defaultOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>▶</span>
-              {defaultOpen ? 'Hide' : 'Show'} system prompt
-            </button>
-            {defaultOpen && (
-              <div style={{ marginTop: '8px' }}>
-                {promptsLoading ? (
-                  <div style={{ background: '#0F1923', border: '1px solid #1F2937', borderRadius: '8px', padding: '14px', color: '#6B7280', fontSize: '12px', fontStyle: 'italic' }}>
-                    Fetching live prompt from backend…
-                  </div>
-                ) : (
-                  <pre style={{ background: '#0a1628', color: '#94A6B9', padding: '16px', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '300px', overflowY: 'auto', margin: 0, border: '1px solid #1F2937', lineHeight: '1.7' }}>
-                    {agentPrompts[activeAgent] ?? 'Prompt not available — check BACKEND_URL env var.'}
-                  </pre>
-                )}
-              </div>
-            )}
+      {/* ── Section 1: Default Prompt ── */}
+      <div style={sectionSt}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <p style={{ ...sectionLabelSt, margin: 0 }}>Default System Prompt</p>
+          {hasUnsavedDefault && (
+            <span style={{ fontSize: '11px', color: '#F59E0B', fontWeight: '600' }}>● Unsaved changes</span>
+          )}
+        </div>
+        <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '12px', lineHeight: '1.5' }}>
+          This is the base system prompt loaded from the <code style={{ background: '#111827', padding: '1px 5px', borderRadius: '4px', color: '#94A6B9' }}>prompts/{activeAgent === 'english_teacher' ? 'language_studio' : activeAgent === 'challenge_generator' ? 'challenge_coach' : activeAgent}.txt</code> file.
+          Edit and save to update the prompt. A backup is created automatically before each save.
+        </p>
+        {isDefaultLoading ? (
+          <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '16px', color: '#6B7280', fontSize: '13px', fontStyle: 'italic' }}>
+            Loading prompt from backend…
           </div>
+        ) : (
+          <textarea
+            value={defaultEdits[activeAgent] ?? ''}
+            onChange={(e) => setDefaultEdits((prev) => ({ ...prev, [activeAgent]: e.target.value }))}
+            rows={14}
+            spellCheck={false}
+            style={{ width: '100%', background: '#0a1628', border: `1px solid ${hasUnsavedDefault ? '#F59E0B' : '#1F2937'}`, borderRadius: '8px', padding: '14px', color: '#94A6B9', fontSize: '12px', fontFamily: 'monospace', lineHeight: '1.7', outline: 'none', resize: 'vertical' as const, boxSizing: 'border-box' as const, whiteSpace: 'pre' }}
+          />
+        )}
+        {defaultMsg && (
+          <p style={{ marginTop: '10px', marginBottom: 0, fontSize: '13px', color: defaultMsg.ok ? '#10B981' : '#EF4444' }}>{defaultMsg.text}</p>
+        )}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' as const }}>
+          <button
+            onClick={() => handleSaveDefault(activeAgent)}
+            disabled={isSavingDefault || !hasUnsavedDefault || isDefaultLoading}
+            style={{ background: hasUnsavedDefault ? '#FE7F32' : '#374151', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 22px', fontWeight: '700', fontSize: '13px', cursor: isSavingDefault || !hasUnsavedDefault ? 'default' : 'pointer', opacity: isSavingDefault || !hasUnsavedDefault ? 0.6 : 1 }}>
+            {isSavingDefault ? 'Saving…' : 'Save Default Prompt'}
+          </button>
+          <button
+            onClick={() => setDefaultEdits((prev) => ({ ...prev, [activeAgent]: defaultPrompts[activeAgent] ?? '' }))}
+            disabled={!hasUnsavedDefault || isDefaultLoading}
+            style={{ background: 'transparent', color: '#9CA3AF', border: '1px solid #374151', borderRadius: '8px', padding: '10px 16px', fontWeight: '500', fontSize: '13px', cursor: hasUnsavedDefault ? 'pointer' : 'default', opacity: hasUnsavedDefault ? 1 : 0.4 }}>
+            Discard Changes
+          </button>
+          <button
+            onClick={() => handleRestoreBackup(activeAgent)}
+            disabled={isRestoringBackup || isDefaultLoading}
+            style={{ background: 'transparent', color: '#6B7280', border: '1px solid #374151', borderRadius: '8px', padding: '10px 16px', fontWeight: '500', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto' }}>
+            {isRestoringBackup ? 'Restoring…' : '↩ Restore Backup'}
+          </button>
+        </div>
+      </div>
 
-          {/* Textarea */}
-          <div style={{ background: '#1F2937', borderRadius: '12px', padding: '20px', border: '1px solid #374151', marginBottom: '16px' }}>
+      {/* ── Section 2: Additional Instructions ── */}
+      <div style={sectionSt}>
+        <p style={{ ...sectionLabelSt, margin: '0 0 8px 0' }}>Additional Instructions</p>
+        <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '14px', lineHeight: '1.5' }}>
+          Appended at the end of the default prompt at runtime. Use this for temporary overrides, seasonal context, or A/B testing without modifying the base prompt.
+        </p>
+        {addlLoading ? <p style={{ color: '#6B7280', fontSize: '13px' }}>Loading…</p> : (
+          <>
             <textarea
-              value={text}
+              value={addlText}
               onChange={(e) => setAgentText(activeAgent, e.target.value)}
-              rows={9}
-              placeholder={`Add custom instructions for ${agent.label}...\nThese are appended after the default system prompt.\nExample: 'During Ramadan, acknowledge the holy month naturally.'`}
+              rows={6}
+              placeholder={`Add runtime instructions for ${agent.label}...\nExample: 'During Ramadan, acknowledge the holy month naturally.'`}
               style={{ width: '100%', background: '#111827', border: `1px solid ${charCount > 950 ? '#EF4444' : '#374151'}`, borderRadius: '8px', padding: '12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', resize: 'vertical' as const, lineHeight: '1.6', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', marginBottom: '14px' }}>
               <span style={{ fontSize: '12px', color: counterColor, fontWeight: charCount > 800 ? '600' : '400' }}>
                 {charCount} / {MAX_INSTRUCTIONS}
               </span>
               {ts && <span style={{ fontSize: '12px', color: '#4B5563' }}>Saved {new Date(ts).toLocaleString()}</span>}
             </div>
-          </div>
-
-          {msg && (
-            <p style={{ marginBottom: '12px', fontSize: '14px', color: msg.ok ? '#10B981' : '#EF4444' }}>{msg.text}</p>
-          )}
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' as const }}>
-            <button onClick={() => handleSave(activeAgent)} disabled={isSaving || charCount > MAX_INSTRUCTIONS}
-              style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '11px 28px', fontWeight: '700', fontSize: '14px', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving || charCount > MAX_INSTRUCTIONS ? 0.6 : 1 }}>
-              {isSaving ? 'Saving…' : `Save ${agent.label} Instructions`}
-            </button>
-            {text.trim() && (
-              <button onClick={() => setShowConfirm(activeAgent)} disabled={isClearing}
-                style={{ background: 'transparent', color: '#EF4444', border: '1px solid #EF4444', borderRadius: '8px', padding: '11px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
-                Clear
-              </button>
+            {msg && (
+              <p style={{ marginBottom: '12px', fontSize: '14px', color: msg.ok ? '#10B981' : '#EF4444' }}>{msg.text}</p>
             )}
-          </div>
-        </div>
-      )}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' as const }}>
+              <button onClick={() => handleSave(activeAgent)} disabled={isSaving || charCount > MAX_INSTRUCTIONS}
+                style={{ background: '#FE7F32', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 22px', fontWeight: '700', fontSize: '13px', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving || charCount > MAX_INSTRUCTIONS ? 0.6 : 1 }}>
+                {isSaving ? 'Saving…' : `Save ${agent.label} Instructions`}
+              </button>
+              {addlText.trim() && (
+                <button onClick={() => setShowConfirm(activeAgent)} disabled={isClearing}
+                  style={{ background: 'transparent', color: '#EF4444', border: '1px solid #EF4444', borderRadius: '8px', padding: '10px 18px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                  Clear
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Confirmation modal */}
       {showConfirm && (
@@ -586,7 +677,7 @@ function AIInstructionsTab() {
               Clear {AI_AGENTS.find((a) => a.id === showConfirm)?.label} Instructions?
             </h3>
             <p style={{ color: '#9CA3AF', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-              This removes the custom instructions for this agent immediately. The default prompt remains active.
+              This removes the additional instructions for this agent. The default prompt file is not affected.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowConfirm(null)}
