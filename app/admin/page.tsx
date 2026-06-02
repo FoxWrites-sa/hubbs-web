@@ -417,6 +417,8 @@ function AIInstructionsTab() {
   const [savingDefault, setSavingDefault] = useState<Record<string, boolean>>({});
   const [restoringBackup, setRestoringBackup] = useState<Record<string, boolean>>({});
   const [defaultMsgs, setDefaultMsgs] = useState<Record<string, { ok: boolean; text: string } | null>>({});
+  const [defaultCharCounts, setDefaultCharCounts] = useState<Record<string, number>>({});
+  const [defaultLastUpdated, setDefaultLastUpdated] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     fetch('/api/admin/ai-instructions')
@@ -439,6 +441,8 @@ function AIInstructionsTab() {
         const p = d.prompt ?? '';
         setDefaultPrompts((prev) => ({ ...prev, [activeAgent]: p }));
         setDefaultEdits((prev) => ({ ...prev, [activeAgent]: p }));
+        setDefaultCharCounts((prev) => ({ ...prev, [activeAgent]: d.char_count ?? p.length }));
+        setDefaultLastUpdated((prev) => ({ ...prev, [activeAgent]: d.last_updated ?? null }));
       })
       .catch(() => {
         setDefaultPrompts((prev) => ({ ...prev, [activeAgent]: '' }));
@@ -460,7 +464,10 @@ function AIInstructionsTab() {
         body: JSON.stringify({ prompt: defaultEdits[agent] }),
       });
       if (!res.ok) throw new Error('Failed');
-      setDefaultPrompts((prev) => ({ ...prev, [agent]: defaultEdits[agent] }));
+      const saved = defaultEdits[agent];
+      setDefaultPrompts((prev) => ({ ...prev, [agent]: saved }));
+      setDefaultCharCounts((prev) => ({ ...prev, [agent]: saved.length }));
+      setDefaultLastUpdated((prev) => ({ ...prev, [agent]: new Date().toISOString() }));
       setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Default prompt saved to file.' } }));
     } catch {
       setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'Failed to save default prompt.' } }));
@@ -479,6 +486,8 @@ function AIInstructionsTab() {
       const p = data.prompt ?? '';
       setDefaultPrompts((prev) => ({ ...prev, [agent]: p }));
       setDefaultEdits((prev) => ({ ...prev, [agent]: p }));
+      setDefaultCharCounts((prev) => ({ ...prev, [agent]: data.char_count ?? p.length }));
+      setDefaultLastUpdated((prev) => ({ ...prev, [agent]: new Date().toISOString() }));
       setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: true, text: 'Backup restored successfully.' } }));
     } catch {
       setDefaultMsgs((prev) => ({ ...prev, [agent]: { ok: false, text: 'No backup found or restore failed.' } }));
@@ -544,6 +553,8 @@ function AIInstructionsTab() {
   const isSavingDefault = savingDefault[activeAgent] ?? false;
   const isRestoringBackup = restoringBackup[activeAgent] ?? false;
   const defaultMsg = defaultMsgs[activeAgent] ?? null;
+  const defaultCharCount = defaultCharCounts[activeAgent] ?? null;
+  const defaultLastUpd = defaultLastUpdated[activeAgent] ?? null;
 
   const sectionSt: React.CSSProperties = {
     background: '#1F2937', borderRadius: '12px', padding: '20px',
@@ -603,6 +614,16 @@ function AIInstructionsTab() {
             spellCheck={false}
             style={{ width: '100%', background: '#0a1628', border: `1px solid ${hasUnsavedDefault ? '#F59E0B' : '#1F2937'}`, borderRadius: '8px', padding: '14px', color: '#94A6B9', fontSize: '12px', fontFamily: 'monospace', lineHeight: '1.7', outline: 'none', resize: 'vertical' as const, boxSizing: 'border-box' as const, whiteSpace: 'pre' }}
           />
+        )}
+        {!isDefaultLoading && (defaultCharCount !== null || defaultLastUpd) && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '12px', color: '#4B5563' }}>
+            {defaultCharCount !== null && (
+              <span>{defaultCharCount.toLocaleString()} characters</span>
+            )}
+            {defaultLastUpd && (
+              <span>Last updated: {new Date(defaultLastUpd).toLocaleString()}</span>
+            )}
+          </div>
         )}
         {defaultMsg && (
           <p style={{ marginTop: '10px', marginBottom: 0, fontSize: '13px', color: defaultMsg.ok ? '#10B981' : '#EF4444' }}>{defaultMsg.text}</p>
