@@ -110,6 +110,11 @@ function UsersTab() {
   const [tierFilter, setTierFilter] = useState('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -139,6 +144,43 @@ function UsersTab() {
     } finally {
       setActionLoading(false);
       setOpenDropdown(null);
+    }
+  };
+
+  const showToast = (text: string, ok = true) => {
+    setToast({ text, ok });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const openDeleteModal = (u: any) => {
+    setSelectedUser(u);
+    setConfirmEmail('');
+    setDeleteModal(true);
+    setOpenDropdown(null);
+  };
+
+  const deleteUser = async () => {
+    if (!selectedUser) return;
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUser._id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers((prev) => prev.filter((u) => u._id !== selectedUser._id));
+        setDeleteModal(false);
+        setConfirmEmail('');
+        showToast(`✓ ${selectedUser.email} permanently deleted`);
+      } else {
+        showToast('Delete failed: ' + (data.error ?? data.message ?? 'Unknown error'), false);
+      }
+    } catch {
+      showToast('Delete failed — backend unreachable', false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -211,7 +253,7 @@ function UsersTab() {
                           Actions ▾
                         </button>
                         {openDropdown === u._id && (
-                          <div style={{ position: 'absolute', right: '8px', top: '44px', background: '#111827', border: '1px solid #374151', borderRadius: '8px', zIndex: 50, minWidth: '190px', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+                          <div style={{ position: 'absolute', right: '8px', top: '44px', background: '#111827', border: '1px solid #374151', borderRadius: '8px', zIndex: 50, minWidth: '200px', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
                             {[
                               { label: 'Upgrade to Pro', tier: 'premium', color: '#FE7F32' },
                               { label: 'Upgrade to Family Pro', tier: 'pro_family', color: '#8B5CF6' },
@@ -223,6 +265,12 @@ function UsersTab() {
                                 {a.label}{tier === a.tier ? ' ✓' : ''}
                               </button>
                             ))}
+                            <div style={{ height: '1px', background: '#374151', margin: '4px 0' }} />
+                            <button
+                              onClick={() => openDeleteModal(u)}
+                              style={{ display: 'block', width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontWeight: '600' }}>
+                              🗑️ Delete Permanently
+                            </button>
                           </div>
                         )}
                       </td>
@@ -232,6 +280,73 @@ function UsersTab() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ── Delete confirmation modal ── */}
+      {deleteModal && selectedUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setDeleteModal(false); setConfirmEmail(''); } }}>
+          <div style={{ background: '#1F2937', borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '90%', border: '1px solid #374151', boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
+            <h3 style={{ color: '#F9FAFB', fontSize: '18px', fontWeight: '700', marginTop: 0, marginBottom: '16px' }}>
+              ⚠️ Delete User Permanently?
+            </h3>
+
+            <div style={{ background: '#0a1628', borderRadius: '10px', padding: '14px', marginBottom: '16px', fontSize: '14px', color: '#94A6B9', lineHeight: '1.7' }}>
+              <div><span style={{ color: '#6B7280' }}>Name: </span><strong style={{ color: '#F9FAFB' }}>{`${selectedUser.first_name ?? ''} ${selectedUser.last_name ?? ''}`.trim() || '—'}</strong></div>
+              <div><span style={{ color: '#6B7280' }}>Email: </span><strong style={{ color: '#F9FAFB' }}>{selectedUser.email}</strong></div>
+              <div><span style={{ color: '#6B7280' }}>Plan: </span><strong style={{ color: TIER_COLORS[selectedUser.subscription_tier ?? 'free'] ?? '#6B7280' }}>{TIER_LABELS[selectedUser.subscription_tier ?? 'free'] ?? 'Free'}</strong></div>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#94A6B9', marginBottom: '4px', lineHeight: '1.6' }}>
+              This will delete <strong style={{ color: '#F9FAFB' }}>ALL</strong> of their data including:
+            </p>
+            <ul style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px', paddingLeft: '20px', lineHeight: '1.8' }}>
+              {['Habits and streaks', 'Prayer logs', 'Mood check-ins', 'AI chat history', 'Calendar events', 'Shopping lists', 'Focus sessions', 'Family memberships'].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+
+            <p style={{ fontSize: '13px', color: '#ef4444', fontWeight: '700', marginBottom: '16px' }}>
+              This action CANNOT be undone.
+            </p>
+
+            <label style={{ display: 'block', fontSize: '13px', color: '#9CA3AF', marginBottom: '8px', fontWeight: '500' }}>
+              Type the user&apos;s email to confirm:
+            </label>
+            <input
+              type="email"
+              placeholder={selectedUser.email}
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              style={{
+                width: '100%', boxSizing: 'border-box', background: '#111827', borderRadius: '8px', padding: '10px 12px', color: '#F9FAFB', fontSize: '14px', outline: 'none', marginBottom: '24px', fontFamily: 'inherit',
+                border: `1px solid ${confirmEmail === '' ? '#374151' : confirmEmail === selectedUser.email ? '#10B981' : '#ef4444'}`,
+              }}
+            />
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setDeleteModal(false); setConfirmEmail(''); }}
+                disabled={deleting}
+                style={{ padding: '10px 20px', background: '#374151', border: 'none', borderRadius: '8px', color: '#F9FAFB', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+                Cancel
+              </button>
+              <button
+                onClick={deleteUser}
+                disabled={deleting || confirmEmail !== selectedUser.email}
+                style={{ padding: '10px 24px', background: '#ef4444', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', cursor: deleting || confirmEmail !== selectedUser.email ? 'not-allowed' : 'pointer', fontWeight: '700', opacity: deleting || confirmEmail !== selectedUser.email ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+                {deleting ? 'Deleting…' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast notification ── */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '24px', right: '24px', background: toast.ok ? '#065F46' : '#7F1D1D', border: `1px solid ${toast.ok ? '#10B981' : '#EF4444'}`, borderRadius: '10px', padding: '14px 20px', color: '#F9FAFB', fontSize: '14px', fontWeight: '600', zIndex: 300, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', maxWidth: '360px' }}>
+          {toast.text}
         </div>
       )}
     </div>
