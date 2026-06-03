@@ -23,18 +23,65 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const raw = await redis.lrange('waitlist', 0, -1);
+  // ── Debug: log what's actually in Redis ──────────────────────────────────
+  try {
+    const listData = await redis.lrange('waitlist', 0, -1);
+    console.log('[waitlist-report] list "waitlist" length:', listData?.length ?? 0);
+    const emailSet = await redis.smembers('waitlist:emails');
+    console.log('[waitlist-report] set "waitlist:emails" size:', emailSet?.length ?? 0);
+    const sampleKey = await redis.keys('waitlist:*');
+    console.log('[waitlist-report] keys matching waitlist:* :', sampleKey?.length ?? 0);
+  } catch (e) {
+    console.error('[waitlist-report] Redis debug error:', e);
+  }
 
-  const entries: WaitlistEntry[] = raw.map((item) => {
-    if (typeof item === 'string') {
-      try {
-        return JSON.parse(item);
-      } catch {
-        return { email: item };
-      }
+  // ── Fetch entries — signup route uses individual keys + an email set ─────
+  let entries: WaitlistEntry[] = [];
+
+  // Primary: use the maintained email set to batch-fetch all entries
+  const emails: string[] = await redis.smembers('waitlist:emails').catch(() => []);
+  if (emails.length > 0) {
+    const keys = emails.map((e) => `waitlist:${e}`);
+    // mget returns values in same order as keys
+    const values: any[] = await redis.mget(...keys).catch(() => []);
+    entries = values
+      .map((v) => {
+        if (!v) return null;
+        if (typeof v === 'string') { try { return JSON.parse(v); } catch { return null; } }
+        return v as WaitlistEntry;
+      })
+      .filter(Boolean) as WaitlistEntry[];
+  }
+
+  // Fallback A: scan individual keys (slower but catches any orphaned entries)
+  if (entries.length === 0) {
+    const allKeys: string[] = await redis.keys('waitlist:*').catch(() => []);
+    const dataKeys = allKeys.filter((k) => k !== 'waitlist:emails');
+    if (dataKeys.length > 0) {
+      const values: any[] = await redis.mget(...dataKeys).catch(() => []);
+      entries = values
+        .map((v) => {
+          if (!v) return null;
+          if (typeof v === 'string') { try { return JSON.parse(v); } catch { return null; } }
+          return v as WaitlistEntry;
+        })
+        .filter(Boolean) as WaitlistEntry[];
     }
-    return item as WaitlistEntry;
-  });
+  }
+
+  // Fallback B: legacy list format (old data)
+  if (entries.length === 0) {
+    const raw: any[] = await redis.lrange('waitlist', 0, -1).catch(() => []);
+    entries = raw
+      .map((item) => {
+        if (typeof item === 'string') { try { return JSON.parse(item); } catch { return { email: item }; } }
+        return item as WaitlistEntry;
+      })
+      .filter(Boolean) as WaitlistEntry[];
+  }
+
+  console.log('[waitlist-report] Total entries found:', entries.length);
+  if (entries.length > 0) console.log('[waitlist-report] Sample entry:', entries[0]);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -185,7 +232,7 @@ export async function GET(request: Request) {
   await resend.emails.send({
     from: 'Hubbs Reports <hello@hubbsapp.com>',
     to: ['ibrahimalqawas@gmail.com'],
-    subject: `Hubbs Waitlist Report — ${dateLabel} (${total} total)`,
+    subject: `📊 Hubbs Waitlist — ${total} total | ${todayCount} today | ${dateLabel}`,
     html,
   });
 
