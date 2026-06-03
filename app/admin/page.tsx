@@ -12,6 +12,7 @@ interface User {
   email?: string;
   subscription_tier?: string;
   created_at?: string;
+  email_verified?: boolean;
 }
 
 interface WaitlistEntry {
@@ -75,6 +76,7 @@ function OverviewTab() {
     { label: 'Waitlist Signups', value: waitlistCount ?? '—', icon: '📧', color: '#10B981' },
     { label: "Today's Signups", value: stats?.today_signups ?? 0, icon: '📅', color: '#F59E0B' },
     { label: 'Free Users', value: stats?.free_users ?? 0, icon: '🆓', color: '#6B7280' },
+    { label: 'Verified Emails', value: stats?.verified_users ?? 0, icon: '✅', color: '#22C55E' },
   ];
 
   return (
@@ -108,6 +110,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
+  const [filterVerified, setFilterVerified] = useState('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -129,7 +132,11 @@ function UsersTab() {
     const q = search.toLowerCase();
     const matchSearch = !search || name.includes(q) || email.includes(q);
     const matchTier = tierFilter === 'all' || (u.subscription_tier ?? 'free') === tierFilter;
-    return matchSearch && matchTier;
+    const matchVerified =
+      filterVerified === 'all' ||
+      (filterVerified === 'verified' && u.email_verified === true) ||
+      (filterVerified === 'unverified' && !u.email_verified);
+    return matchSearch && matchTier && matchVerified;
   });
 
   const updateSubscription = async (userId: string, tier: string) => {
@@ -211,6 +218,13 @@ function UsersTab() {
               {f.label}
             </button>
           ))}
+          <div style={{ width: '1px', background: '#374151', margin: '0 4px' }} />
+          {[{ value: 'all', label: 'All' }, { value: 'verified', label: '✓ Verified' }, { value: 'unverified', label: '✗ Unverified' }].map((f) => (
+            <button key={f.value} onClick={() => setFilterVerified(f.value)}
+              style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', background: filterVerified === f.value ? '#22C55E' : '#1F2937', color: filterVerified === f.value ? '#fff' : '#9CA3AF' }}>
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -220,14 +234,14 @@ function UsersTab() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ background: '#111827', color: '#6B7280', textAlign: 'left' }}>
-                  {['Name', 'Email', 'Tier', 'Joined', 'Actions'].map((h) => (
+                  {['Name', 'Email', 'Verified', 'Tier', 'Joined', 'Actions'].map((h) => (
                     <th key={h} style={{ padding: '12px 16px', fontWeight: '600', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#6B7280' }}>No users found</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#6B7280' }}>No users found</td></tr>
                 ) : filtered.map((u, i) => {
                   const tier = u.subscription_tier ?? 'free';
                   return (
@@ -237,6 +251,13 @@ function UsersTab() {
                       </td>
                       <td style={{ padding: '12px 16px', color: '#9CA3AF', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {u.email ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {u.email_verified === true ? (
+                          <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', background: '#22C55E22', color: '#22C55E', whiteSpace: 'nowrap' }}>✓ Verified</span>
+                        ) : (
+                          <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', background: '#EF444422', color: '#EF4444', whiteSpace: 'nowrap' }}>✗ Unverified</span>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', background: (TIER_COLORS[tier] ?? '#6B7280') + '22', color: TIER_COLORS[tier] ?? '#6B7280', whiteSpace: 'nowrap' }}>
