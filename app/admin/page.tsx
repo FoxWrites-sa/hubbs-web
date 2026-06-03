@@ -875,12 +875,16 @@ function WaitlistTab() {
   const todayCount = entries.filter((e) => new Date(e.timestamp).toDateString() === today).length;
 
   const exportCsv = () => {
+    const quoteCell = (val: string) => {
+      const s = String(val ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
     const rows = [
       ['Email', 'Signed Up', 'Country', 'Device', 'Source'],
       ...entries.map((e) => [e.email, new Date(e.timestamp).toLocaleString(), e.country, e.device, e.source]),
     ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const csv = '﻿' + rows.map((r) => r.map(quoteCell).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
     a.href = url; a.download = 'hubbs-waitlist.csv'; a.click();
     URL.revokeObjectURL(url);

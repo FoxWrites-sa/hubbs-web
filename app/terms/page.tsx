@@ -252,7 +252,7 @@ const sections = [
       <ul className="space-y-2 leading-relaxed list-none">
         <li className="flex items-start gap-2.5">
           <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#FE7F32' }} />
-          <span>Email: <a href="mailto:legal@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>legal@hubbsapp.com</a></span>
+          <span>Email: <a href="mailto:hello@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>hello@hubbsapp.com</a></span>
         </li>
         <li className="flex items-start gap-2.5">
           <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#FE7F32' }} />

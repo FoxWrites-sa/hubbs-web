@@ -91,7 +91,7 @@ const sections = [
           'Hubbs is designed for family use including children',
           'We do not knowingly collect personal information from children under 13 without verified parental consent',
           'Parents or guardians must create accounts for children under 13',
-          'If you believe a child under 13 has provided us personal information without consent, contact us at privacy@hubbsapp.com and we will delete it',
+          'If you believe a child under 13 has provided us personal information without consent, contact us at hello@hubbsapp.com and we will delete it',
           'For users aged 13–17, parental guidance is recommended',
           "Children's data is never used for advertising or sold to third parties",
         ].map((item) => (
@@ -169,7 +169,7 @@ const sections = [
       <ul className="space-y-2 leading-relaxed list-none">
         {[
           'Your data is retained as long as your account is active',
-          'You can request deletion of your account and all associated data by emailing privacy@hubbsapp.com',
+          'You can request deletion of your account and all associated data by emailing hello@hubbsapp.com',
           'We will process deletion requests within 30 days',
         ].map((item) => (
           <li key={item} className="flex items-start gap-2.5">
@@ -199,7 +199,7 @@ const sections = [
             </li>
           ))}
         </ul>
-        <p className="leading-relaxed">To exercise these rights contact: <a href="mailto:privacy@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>privacy@hubbsapp.com</a></p>
+        <p className="leading-relaxed">To exercise these rights contact: <a href="mailto:hello@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>hello@hubbsapp.com</a></p>
       </>
     ),
   },
@@ -225,7 +225,7 @@ const sections = [
       <ul className="space-y-2 leading-relaxed list-none">
         <li className="flex items-start gap-2.5">
           <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#FE7F32' }} />
-          <span>Email: <a href="mailto:privacy@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>privacy@hubbsapp.com</a></span>
+          <span>Email: <a href="mailto:hello@hubbsapp.com" className="hover:opacity-80 transition-opacity" style={{ color: '#FE7F32' }}>hello@hubbsapp.com</a></span>
         </li>
         <li className="flex items-start gap-2.5">
           <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#FE7F32' }} />
