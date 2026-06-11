@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import HubbsLogo from "@/components/HubbsLogo";
 import AppStoreButtons from "@/components/AppStoreButtons";
 import DeepLinkHandler from "@/components/DeepLinkHandler";
@@ -42,6 +42,8 @@ const T = {
     addApple: "Download .ics File",
     responseError: "Could not save your response. Please try again.",
     or: "or",
+    commentPlaceholder: "Add a comment (optional)…",
+    organiserNotified: "The organiser has been notified.",
   },
   ar: {
     headline: (name: string) => `دعاك ${name} إلى فعالية`,
@@ -55,6 +57,8 @@ const T = {
     addApple: "تحميل ملف .ics",
     responseError: "تعذّر حفظ ردّك. يرجى المحاولة مجدداً.",
     or: "أو",
+    commentPlaceholder: "أضف تعليقًا (اختياري)…",
+    organiserNotified: "تم إخطار المنظّم.",
   },
 };
 
@@ -133,11 +137,13 @@ const SCHEME = process.env.NEXT_PUBLIC_DEEP_LINK_SCHEME ?? "hubbs";
 
 export default function CalendarInvitePage() {
   const { token } = useParams<{ token: string }>();
+  const searchParams = useSearchParams();
   const [invitation, setInvitation] = useState<CalendarInvitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorType>(null);
   const [lang, setLang] = useState<Lang>("en");
   const [responseStatus, setResponseStatus] = useState<ResponseStatus>("idle");
+  const [comment, setComment] = useState("");
 
   useEffect(() => {
     if (navigator.language.toLowerCase().startsWith("ar")) {
@@ -160,13 +166,23 @@ export default function CalendarInvitePage() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  // Auto-respond if ?action=accept or ?action=decline is in URL
+  useEffect(() => {
+    const action = searchParams?.get("action");
+    if (action === "accept" || action === "decline") {
+      respond(action === "accept" ? "accepted" : "declined");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, token]);
+
   const respond = async (response: "accepted" | "declined") => {
+    if (responseStatus === "loading" || responseStatus === "accepted" || responseStatus === "declined") return;
     setResponseStatus("loading");
     try {
       const res = await fetch(`${API}/api/invitations/link/${token}/respond`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response }),
+        body: JSON.stringify({ response, comment }),
       });
       if (!res.ok) throw new Error();
       setResponseStatus(response);
@@ -276,9 +292,19 @@ export default function CalendarInvitePage() {
           >
             {responseStatus === "accepted" ? "✅ " : "❌ "}
             {responseStatus === "accepted" ? t.acceptedMsg : t.declinedMsg}
+            <p className="text-xs mt-2 opacity-70">{t.organiserNotified}</p>
           </div>
         ) : (
           <>
+            {/* Optional comment */}
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder={t.commentPlaceholder}
+              rows={2}
+              className="w-full rounded-xl bg-hubbs-card text-hubbs-text text-sm p-3 resize-none border border-transparent focus:border-hubbs-primary outline-none transition-colors"
+            />
+
             {/* Accept / Decline */}
             <div className="grid grid-cols-2 gap-3">
               <button
