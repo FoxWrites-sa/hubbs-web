@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 
+type ErrorType = 'not_found' | 'network' | 'timeout' | 'backend_not_configured' | ''
+
 export default function InvitePage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -11,22 +13,27 @@ export default function InvitePage() {
 
   const [invitation, setInvitation] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<ErrorType>('')
   const [action, setAction] = useState(actionParam)
   const [comment, setComment] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     if (!token) return
     const fetchInvitation = async () => {
       try {
         const res = await fetch(`/api/invite/${token}`)
-        if (!res.ok) throw new Error('Not found')
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          setError((body.error as ErrorType) || 'not_found')
+          return
+        }
         const data = await res.json()
         setInvitation(data)
       } catch {
-        setError('This invitation has expired or is no longer valid.')
+        setError('network')
       } finally {
         setLoading(false)
       }
@@ -34,11 +41,12 @@ export default function InvitePage() {
     fetchInvitation()
   }, [token])
 
-  // Auto-submit if action in URL (from email click)
+  // Auto-submit if ?action= in URL (from email click)
   useEffect(() => {
     if (actionParam && invitation && !submitted && !submitting) {
       handleSubmit(actionParam)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionParam, invitation])
 
   const handleSubmit = async (act?: string) => {
@@ -46,93 +54,102 @@ export default function InvitePage() {
     if (!finalAction) return
     if (submitted || submitting) return
     setSubmitting(true)
+    setSubmitError('')
     try {
       const res = await fetch(`/api/invite/${token}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: finalAction, response: finalAction === 'accept' ? 'accepted' : 'declined', comment }),
+        body: JSON.stringify({ action: finalAction, comment }),
       })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) throw new Error('failed')
       setAction(finalAction)
       setSubmitted(true)
     } catch {
-      setError('Failed to submit response. Please try again.')
+      setSubmitError('Failed to submit response. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
   if (loading) return (
-    <div style={styles.container}>
-      <div style={styles.logo}>hubbs</div>
-      <p style={styles.subtitle}>Loading...</p>
+    <div style={s.container}>
+      <div style={s.logo}>hubbs</div>
+      <p style={s.subtitle}>Loading invitation…</p>
     </div>
   )
 
-  if (error && !invitation) return (
-    <div style={styles.container}>
-      <div style={styles.logo}>hubbs</div>
-      <p style={styles.errorText}>{error}</p>
-      <div style={styles.downloadSection}>
-        <p style={styles.subtitle}>Download Hubbs</p>
-        <a href="https://apps.apple.com/app/hubbs" style={styles.storeButton}>🍎 App Store</a>
+  if (error || !invitation) return (
+    <div style={s.container}>
+      <div style={s.logo}>hubbs</div>
+      <div style={s.card}>
+        <p style={{ fontSize: 48, textAlign: 'center', margin: '0 0 12px 0' }}>🔗</p>
+        <h2 style={s.title}>Invitation Link</h2>
+        <p style={s.subtitle}>
+          {error === 'network' || error === 'timeout' || error === 'backend_not_configured'
+            ? 'Unable to load invitation. The link may have expired or the service is temporarily unavailable. Please try again in a few minutes.'
+            : 'This invitation has expired or is no longer valid.'}
+        </p>
+        <p style={{ color: '#94A6B9', fontSize: 13, textAlign: 'center', marginTop: 16 }}>
+          If you received this via email from a Hubbs user, please contact them directly.
+        </p>
+      </div>
+      <div style={s.downloadSection}>
+        <p style={s.subtitle}>Download Hubbs App</p>
+        <a href="https://apps.apple.com/app/hubbs" style={s.storeButton}>🍎 App Store</a>
       </div>
     </div>
   )
 
   if (submitted) return (
-    <div style={styles.container}>
-      <div style={styles.logo}>hubbs</div>
-      <div style={styles.card}>
-        <p style={{ fontSize: 48, margin: '0 0 12px 0' }}>{action === 'accept' ? '✅' : '❌'}</p>
-        <h2 style={styles.title}>
+    <div style={s.container}>
+      <div style={s.logo}>hubbs</div>
+      <div style={s.card}>
+        <p style={{ fontSize: 48, textAlign: 'center', margin: '0 0 12px 0' }}>
+          {action === 'accept' ? '✅' : '❌'}
+        </p>
+        <h2 style={s.title}>
           {action === 'accept' ? 'You accepted the invitation!' : 'You declined the invitation.'}
         </h2>
-        <p style={styles.subtitle}>The organizer has been notified.</p>
+        <p style={s.subtitle}>The organizer has been notified.</p>
       </div>
-      <div style={styles.downloadSection}>
-        <p style={styles.subtitle}>Manage your events with Hubbs</p>
-        <a href="https://apps.apple.com/app/hubbs" style={styles.storeButton}>🍎 Download on App Store</a>
+      <div style={s.downloadSection}>
+        <p style={s.subtitle}>Manage your events with Hubbs</p>
+        <a href="https://apps.apple.com/app/hubbs" style={s.storeButton}>🍎 Download on App Store</a>
       </div>
     </div>
   )
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.logo}>hubbs</div>
+  // Derive event fields from both flat and nested formats
+  const eventTitle = invitation?.event_title || invitation?.data?.title || 'Event'
+  const eventDate  = invitation?.event_date  || invitation?.data?.start_datetime?.slice(0, 10) || ''
+  const eventTime  = invitation?.event_time  || invitation?.data?.start_datetime?.slice(11, 16) || ''
+  const eventLoc   = invitation?.event_location || invitation?.data?.location || ''
+  const inviterName = invitation?.inviter_name || invitation?.data?.inviter_name || 'Someone'
 
-      <div style={styles.card}>
-        <h2 style={styles.title}>You&rsquo;re invited! 📅</h2>
-        <p style={styles.subtitle}>
-          <strong style={{ color: '#fff' }}>{invitation?.inviter_name || invitation?.data?.inviter_name}</strong> invited you to:
+  return (
+    <div style={s.container}>
+      <div style={s.logo}>hubbs</div>
+
+      <div style={s.card}>
+        <h2 style={s.title}>You&rsquo;re invited! 📅</h2>
+        <p style={s.subtitle}>
+          <strong style={{ color: '#fff' }}>{inviterName}</strong> invited you to:
         </p>
 
-        <div style={styles.eventCard}>
-          <h3 style={styles.eventTitle}>
-            {invitation?.event_title || invitation?.data?.title || 'Event'}
-          </h3>
-          {(invitation?.event_date || invitation?.data?.start_datetime) && (
-            <p style={styles.eventDetail}>
-              📅 {invitation?.event_date || invitation?.data?.start_datetime?.slice(0, 10)}
-            </p>
-          )}
-          {(invitation?.event_time || (invitation?.data?.start_datetime || '').includes('T')) && (
-            <p style={styles.eventDetail}>
-              🕐 {invitation?.event_time || invitation?.data?.start_datetime?.slice(11, 16)}
-            </p>
-          )}
-          {(invitation?.event_location || invitation?.data?.location) && (
-            <p style={styles.eventDetail}>📍 {invitation?.event_location || invitation?.data?.location}</p>
-          )}
+        <div style={s.eventCard}>
+          <h3 style={s.eventTitle}>{eventTitle}</h3>
+          {eventDate && <p style={s.eventDetail}>📅 {eventDate}</p>}
+          {eventTime && <p style={s.eventDetail}>🕐 {eventTime}</p>}
+          {eventLoc  && <p style={s.eventDetail}>📍 {eventLoc}</p>}
         </div>
 
-        <p style={styles.questionText}>Will you attend?</p>
+        <p style={s.questionText}>Will you attend?</p>
 
-        <div style={styles.buttonRow}>
+        <div style={s.buttonRow}>
           <button
             onClick={() => setAction('accept')}
             style={{
-              ...styles.actionButton,
+              ...s.actionButton,
               backgroundColor: action === 'accept' ? '#22c55e' : '#e5e7eb',
               color: action === 'accept' ? 'white' : '#374151',
             }}
@@ -142,7 +159,7 @@ export default function InvitePage() {
           <button
             onClick={() => setAction('decline')}
             style={{
-              ...styles.actionButton,
+              ...s.actionButton,
               backgroundColor: action === 'decline' ? '#ef4444' : '#e5e7eb',
               color: action === 'decline' ? 'white' : '#374151',
             }}
@@ -155,34 +172,36 @@ export default function InvitePage() {
           placeholder="Add a comment (optional)"
           value={comment}
           onChange={e => setComment(e.target.value)}
-          style={styles.commentInput}
+          style={s.commentInput}
           rows={3}
         />
 
-        {error && <p style={styles.errorText}>{error}</p>}
+        {submitError && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{submitError}</p>}
 
         <button
           onClick={() => handleSubmit()}
           disabled={!action || submitting}
-          style={{ ...styles.submitButton, opacity: (!action || submitting) ? 0.5 : 1 }}
+          style={{ ...s.submitButton, opacity: (!action || submitting) ? 0.5 : 1 }}
         >
-          {submitting ? 'Sending...' : 'Send Response'}
+          {submitting ? 'Sending…' : 'Send Response'}
         </button>
       </div>
 
-      <div style={styles.downloadSection}>
-        <p style={styles.subtitle}>Open in Hubbs app</p>
-        <a href={`hubbs://invite/${token}`} style={styles.storeButton}>📱 Open Hubbs</a>
-        <div style={{ marginTop: 12 }}>
-          <a href="https://apps.apple.com/app/hubbs" style={{ ...styles.storeButton, marginRight: 8 }}>🍎 App Store</a>
-          <a href="https://play.google.com/store/apps/hubbs" style={styles.storeButton}>🤖 Google Play</a>
+      <div style={s.downloadSection}>
+        <p style={s.subtitle}>Open in Hubbs app</p>
+        <a href={`hubbs://invite/${token}`} style={{ ...s.storeButton, marginBottom: 12, display: 'inline-block' }}>
+          📱 Open Hubbs
+        </a>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="https://apps.apple.com/app/hubbs" style={s.storeButton}>🍎 App Store</a>
+          <a href="https://play.google.com/store/apps/hubbs" style={s.storeButton}>🤖 Google Play</a>
         </div>
       </div>
     </div>
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
     backgroundColor: '#0F1923',
@@ -192,12 +211,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '32px 20px',
     fontFamily: 'sans-serif',
   },
-  logo: {
-    fontSize: 32,
-    fontWeight: 900,
-    color: '#FE7F32',
-    marginBottom: 24,
-  },
+  logo: { fontSize: 32, fontWeight: 900, color: '#FE7F32', marginBottom: 24 },
   card: {
     backgroundColor: '#1a2532',
     borderRadius: 16,
@@ -206,18 +220,8 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 480,
     marginBottom: 24,
   },
-  title: {
-    color: 'white',
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 8,
-    marginTop: 0,
-  },
-  subtitle: {
-    color: '#94A6B9',
-    fontSize: 14,
-    marginBottom: 16,
-  },
+  title: { color: 'white', fontSize: 22, fontWeight: 700, marginBottom: 8, marginTop: 0 },
+  subtitle: { color: '#94A6B9', fontSize: 14, marginBottom: 16 },
   eventCard: {
     backgroundColor: '#0F1923',
     borderRadius: 12,
@@ -225,28 +229,10 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 16,
     borderLeft: '3px solid #FE7F32',
   },
-  eventTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 700,
-    margin: '0 0 8px 0',
-  },
-  eventDetail: {
-    color: '#94A6B9',
-    fontSize: 14,
-    margin: '4px 0',
-  },
-  questionText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 600,
-    marginBottom: 12,
-  },
-  buttonRow: {
-    display: 'flex',
-    gap: 12,
-    marginBottom: 16,
-  },
+  eventTitle: { color: 'white', fontSize: 18, fontWeight: 700, margin: '0 0 8px 0' },
+  eventDetail: { color: '#94A6B9', fontSize: 14, margin: '4px 0' },
+  questionText: { color: 'white', fontSize: 16, fontWeight: 600, marginBottom: 12 },
+  buttonRow: { display: 'flex', gap: 12, marginBottom: 16 },
   actionButton: {
     flex: 1,
     padding: '12px 0',
@@ -279,9 +265,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     cursor: 'pointer',
   },
-  downloadSection: {
-    textAlign: 'center',
-  },
+  downloadSection: { textAlign: 'center' },
   storeButton: {
     display: 'inline-block',
     backgroundColor: '#1a2532',
@@ -290,11 +274,5 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 8,
     textDecoration: 'none',
     fontWeight: 600,
-  },
-  errorText: {
-    color: '#ef4444',
-    textAlign: 'center',
-    marginBottom: 16,
-    marginTop: 0,
   },
 }
